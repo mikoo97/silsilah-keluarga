@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silsilah Keluarga</title>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<style>
+  :root{
+    --bg:#f4f6f8; --panel:#ffffff; --line:#e2e8f0; --text:#1e293b;
+    --muted:#64748b; --accent:#2563eb; --accent2:#0ea5e9;
+    --male:#3b82f6; --female:#ec4899; --dead:#94a3b8;
+    --danger:#dc2626; --ok:#16a34a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+  .app{display:flex;flex-direction:column;height:100vh}
+  header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-shrink:0}
+  header h1{font-size:18px;margin:0;flex:1}
+  header .brand{display:flex;align-items:center;gap:8px}
+  header .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{background:#f1f5f9}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{filter:brightness(1.05)}
+  .btn.danger{color:var(--danger);border-color:#fecaca}
+  .btn.sm{padding:4px 8px;font-size:12px}
+  .drivestatus{font-size:12px;padding:5px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .drivestatus.off{background:#f1f5f9;color:#64748b}
+  .drivestatus.saving{background:#fef9c3;color:#854d0e}
+  .drivestatus.saved{background:#dcfce7;color:#15803d}
+  .drivestatus.error{background:#fee2e2;color:#b91c1c}
+  .main{display:flex;flex:1;min-height:0}
+  /* sidebar */
+  .sidebar{width:300px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0}
+  .sidebar .top{padding:10px;border-bottom:1px solid var(--line)}
+  .search{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .people{overflow-y:auto;flex:1;padding:6px}
+  .pcard{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer}
+  .pcard:hover{background:#f1f5f9}
+  .pcard.active{background:#e0edff}
+  .pcard .nm{font-size:13px;font-weight:600;line-height:1.2}
+  .pcard .sub{font-size:11px;color:var(--muted)}
+  .count{font-size:11px;color:var(--muted);padding:4px 10px}
+  /* avatar */
+  .av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;position:relative}
+  .av.male{background:var(--male)} .av.female{background:var(--female)} .av.unknown{background:#a3a3a3}
+  .av.dead{filter:grayscale(1) brightness(.9)}
+  .av .cross{position:absolute;right:-3px;bottom:-3px;background:#fff;border-radius:50%;width:15px;height:15px;font-size:10px;display:flex;align-items:center;justify-content:center;color:#475569;border:1px solid var(--line)}
+  /* detail */
+  .detail{width:330px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+  .detail .empty{padding:30px 18px;color:var(--muted);text-align:center;font-size:14px}
+  .dhead{padding:18px;display:flex;flex-direction:column;align-items:center;gap:8px;border-bottom:1px solid var(--line);text-align:center}
+  .dhead .bigav{width:72px;height:72px;font-size:28px}
+  .dhead .nm{font-size:18px;font-weight:700}
+  .dhead .pg{font-size:13px;color:var(--muted)}
+  .badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#f1f5f9;color:var(--muted)}
+  .badge.dead{background:#f1f5f9;color:#475569}
+  .field{padding:8px 18px;display:flex;font-size:13px;border-bottom:1px solid #f1f5f9}
+  .field .k{width:90px;color:var(--muted);flex-shrink:0}
+  .field .v{flex:1}
+  .rels{padding:12px 18px}
+  .rels h4{margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .relrow{display:flex;align-items:center;gap:8px;padding:5px;border-radius:8px;cursor:pointer}
+  .relrow:hover{background:#f1f5f9}
+  .relrow .nm{font-size:13px}
+  .relrow .ord{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .relrow .reorder{display:flex;gap:2px;margin-left:auto}
+  .relrow .reorder .btn{padding:2px 7px;line-height:1}
+  .btn:disabled{opacity:.35;cursor:default}
+  .dhead .editbtn{margin-top:4px}
+  .actions{display:flex;flex-wrap:wrap;gap:6px;padding:12px 18px;border-top:1px solid var(--line)}
+  /* tree */
+  .treewrap{flex:1;position:relative;overflow:hidden;background:
+     radial-gradient(circle, #e2e8f0 1px, transparent 1px); background-size:22px 22px}
+  .treebar{position:absolute;top:10px;left:10px;z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+  .treebar select{padding:6px;border:1px solid var(--line);border-radius:6px;font-size:13px;max-width:200px}
+  .zoombtns{position:absolute;bottom:14px;right:14px;z-index:5;display:flex;flex-direction:column;gap:6px}
+  .zoombtns .btn{width:36px;height:36px;justify-content:center;font-size:18px;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  svg{width:100%;height:100%;cursor:grab}
+  svg.grabbing{cursor:grabbing}
+  .node rect{fill:#fff;stroke:var(--line);stroke-width:1.5;rx:10}
+  .node.sel rect{stroke:var(--accent);stroke-width:2.5}
+  .node text.nm{font-size:13px;font-weight:600;fill:var(--text)}
+  .node text.sub{font-size:11px;fill:var(--muted)}
+  .node{cursor:pointer}
+  .node.draggable{cursor:grab}
+  .node.focus rect{stroke:var(--accent2);stroke-width:3}
+  .treehint{font-size:11px;color:var(--muted)}
+  .link{fill:none;stroke:#94a3b8;stroke-width:1.5}
+  .marriage{stroke:#cbd5e1;stroke-width:2}
+  .treeempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);text-align:center;flex-direction:column;gap:14px}
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:50}
+  .modal{background:#fff;border-radius:14px;width:420px;max-width:92vw;max-height:88vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+  .modal h3{margin:0;padding:16px 18px;border-bottom:1px solid var(--line);font-size:16px}
+  .mbody{padding:16px 18px}
+  .frow{margin-bottom:12px}
+  .frow label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .frow input,.frow select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .seg{display:flex;gap:6px}
+  .seg button{flex:1;padding:8px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;font-size:13px}
+  .seg button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .mfoot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--line)}
+  .pickitem{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer}
+  .pickitem:hover{background:#f1f5f9}
+  .hint{font-size:12px;color:var(--muted);margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><div class="logo">🌳</div></div>
+    <h1>Silsilah Keluarga</h1>
+    <span id="driveStatus" class="drivestatus off">● Lokal saja</span>
+    <button class="btn" id="btnDrive">☁ Hubungkan Drive</button>
+    <button class="btn" id="btnSample">Muat contoh</button>
+    <button class="btn" id="btnExport">⬇ Ekspor</button>
+    <button class="btn" id="btnImport">⬆ Impor</button>
+    <button class="btn danger" id="btnReset">Kosongkan</button>
+    <input type="file" id="fileInput" accept="application/json" hidden>
+  </header>
+  <div class="main">
+    <!-- sidebar -->
+    <aside class="sidebar">
+      <div class="top">
+        <button class="btn primary" style="width:100%;justify-content:center;margin-bottom:8px" id="btnAdd">➕ Tambah orang</button>
+        <input class="search" id="searchBox" placeholder="Cari nama...">
+      </div>
+      <div class="count" id="count"></div>
+      <div class="people" id="peopleList"></div>
+    </aside>
+    <!-- tree -->
+    <div class="treewrap">
+      <div class="treebar">
+        <span style="font-size:13px;color:var(--muted)">Pusatkan di:</span>
+        <select id="rootSelect"></select>
+        <span class="treehint">· klik 2× orang untuk memusatkan (leluhur ↑ &amp; keturunan ↓)</span>
+      </div>
+      <svg id="svg"><g id="viewport"></g></svg>
+      <div class="treeempty" id="treeEmpty">
+        <div style="font-size:40px">🌳</div>
+        <div>Belum ada data.<br>Klik <b>Tambah orang</b> atau <b>Muat contoh</b> untuk mulai.</div>
+      </div>
+      <div class="zoombtns">
+        <button class="btn" id="zoomIn">+</button>
+        <button class="btn" id="zoomOut">−</button>
+        <button class="btn" id="zoomFit" title="Pas ke layar">⤢</button>
+      </div>
+    </div>
+    <!-- detail -->
+    <aside class="detail" id="detail">
+      <div class="empty">Pilih seseorang dari daftar untuk melihat & mengelola hubungannya.</div>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* ============ DATA MODEL ============
+ state = { people:[{id,namaLengkap,namaPanggilan,telepon,domisili,jk:'L'|'P'|'',status:'hidup'|'wafat'}],
+           unions:[{id,partners:[id..(1-2)],children:[id..]}] }
+   - union dengan 2 partner = pasangan menikah
+   - union dengan 1 partner = orang tua tunggal
+*/
+let state = load() || {people:[], unions:[]};
+let selectedId = null;
+let rootId = null;
+let view = {x:60,y:60,k:1};
+let nodePos = {};      // pid -> {x,y} pusat kotak (koordinat layout) untuk drag
+let nodeDrag = null;   // status drag kotak anak di canvas
+
+/* ---------- persistence ---------- */
+function save(){ localStorage.setItem('silsilah-data', JSON.stringify(state)); schedulePush(); }
+function load(){ try{ return JSON.parse(localStorage.getItem('silsilah-data')); }catch(e){ return null; } }
+function uid(p){ return p+Math.random().toString(36).slice(2,9); }
+
+/* ---------- queries ---------- */
+const P = id => state.people.find(p=>p.id===id);
+const unionsOf = id => state.unions.filter(u=>u.partners.includes(id));
+function spousesOf(id){ const s=[]; unionsOf(id).forEach(u=>u.partners.forEach(pid=>{ if(pid!==id) s.push(pid); })); return s; }
+function childrenOf(id){ const c=[]; unionsOf(id).forEach(u=>u.children.forEach(ch=>c.push(ch))); return c; }
+const parentUnionOf = id => state.unions.find(u=>u.children.includes(id));
+function parentsOf(id){ const u=parentUnionOf(id); return u?u.partners:[]; }
+
+/* ---------- mutations ---------- */
+function addPerson(data){ const id=uid('p'); state.people.push({id,...data}); save(); return id; }
+function addSpouse(a,b){
+  if(state.unions.some(u=>u.partners.includes(a)&&u.partners.includes(b))){ save(); return; }
+  // kalau salah satu sudah punya "keluarga" sendirian (anak ditambah sebelum nikah),
+  // jadikan union itu sebagai pernikahan -> anak otomatis jadi milik berdua
+  const single=state.unions.find(u=>u.partners.length===1 && (u.partners[0]===a||u.partners[0]===b));
+  if(single) single.partners.push(single.partners[0]===a?b:a);
+  else state.unions.push({id:uid('u'),partners:[a,b],children:[]});
+  save();
+}
+// rapikan data: gabungkan union orang-tua-tunggal ke pernikahan bila tak ambigu, buang union kosong
+function repairUnions(){
+  state.people.forEach(p=>{
+    const us=unionsOf(p.id);
+    const married=us.filter(u=>u.partners.length===2);
+    const single=us.filter(u=>u.partners.length===1 && u.partners[0]===p.id);
+    if(married.length===1 && single.length){
+      single.forEach(su=>{ su.children.forEach(c=>{ if(!married[0].children.includes(c)) married[0].children.push(c); }); su.children=[]; });
+    }
+  });
+  state.unions=state.unions.filter(u=>u.partners.length>=2 || u.children.length>0);
+}
+function addChild(parentId, childId){
+  // pilih union yg punya pasangan; kalau tidak ada, buat union orang tua tunggal
+  let u = unionsOf(parentId).find(x=>x.partners.length===2) || unionsOf(parentId)[0];
+  if(!u){ u={id:uid('u'),partners:[parentId],children:[]}; state.unions.push(u); }
+  if(!u.children.includes(childId)) u.children.push(childId);
+  save();
+}
+function addParent(childId, parentId){
+  let u = parentUnionOf(childId);
+  if(u){ if(!u.partners.includes(parentId) && u.partners.length<2) u.partners.push(parentId); }
+  else state.unions.push({id:uid('u'),partners:[parentId],children:[childId]});
+  save();
+}
+function deletePerson(id){
+  state.people = state.people.filter(p=>p.id!==id);
+  state.unions.forEach(u=>{ u.partners=u.partners.filter(x=>x!==id); u.children=u.children.filter(x=>x!==id); });
+  state.unions = state.unions.filter(u=>u.partners.length>0 || u.children.length>0);
+  save();
+}
+
+/* ============ RENDER: SIDEBAR ============ */
+function avatarHTML(p,cls=''){
+  const init=(p.namaPanggilan||p.namaLengkap||'?').trim()[0]?.toUpperCase()||'?';
+  const g = p.jk==='L'?'male':p.jk==='P'?'female':'unknown';
+  const dead = p.status==='wafat'?'dead':'';
+  return `<div class="av ${g} ${dead} ${cls}">${init}${p.status==='wafat'?'<span class="cross">✝</span>':''}</div>`;
+}
+function renderList(){
+  const q=(document.getElementById('searchBox').value||'').toLowerCase();
+  const list=document.getElementById('peopleList');
+  const people=[...state.people].sort((a,b)=>(a.namaLengkap||'').localeCompare(b.namaLengkap||''))
+    .filter(p=>!q || (p.namaLengkap+' '+(p.namaPanggilan||'')).toLowerCase().includes(q));
+  document.getElementById('count').textContent = state.people.length+' orang';
+  list.innerHTML = people.map(p=>`
+    <div class="pcard ${p.id===selectedId?'active':''}" data-id="${p.id}">
+      ${avatarHTML(p)}
+      <div><div class="nm">${esc(p.namaLengkap||'(tanpa nama)')}</div>
+      <div class="sub">${esc(p.namaPanggilan||'')}${p.domisili?' · '+esc(p.domisili):''}</div></div>
+    </div>`).join('') || '<div class="count">Belum ada orang.</div>';
+  list.querySelectorAll('.pcard').forEach(el=>el.onclick=()=>select(el.dataset.id));
+}
+
+/* ============ RENDER: DETAIL ============ */
+function relRow(id){
+  const p=P(id); if(!p) return '';
+  return `<div class="relrow" data-id="${id}">${avatarHTML(p)}<div><div class="nm">${esc(p.namaLengkap)}</div>
+    <div class="sub" style="font-size:11px;color:var(--muted)">${esc(p.namaPanggilan||'')}</div></div></div>`;
+}
+function renderDetail(){
+  const d=document.getElementById('detail');
+  if(!selectedId || !P(selectedId)){ d.innerHTML='<div class="empty">Pilih seseorang dari daftar untuk melihat & mengelola hubungannya.</div>'; return; }
+  const p=P(selectedId);
+  const sp=spousesOf(p.id), pa=parentsOf(p.id);
+  const pu=parentUnionOf(p.id);
+  let urutHtml='';
+  if(pu){
+    const idx=pu.children.indexOf(p.id), n=pu.children.length;
+    urutHtml=`<div class="field"><div class="k">Urutan</div>
+      <div class="v" style="display:flex;align-items:center;gap:8px">
+        <span>Anak ke-${idx+1} dari ${n} bersaudara</span>
+        ${n>1?`<span class="reorder" style="margin-left:auto">
+          <button class="btn sm" id="selfUp" ${idx===0?'disabled':''} title="Geser lebih awal">↑</button>
+          <button class="btn sm" id="selfDown" ${idx===n-1?'disabled':''} title="Geser lebih akhir">↓</button>
+        </span>`:''}
+      </div></div>`;
+  }
+  d.innerHTML=`
+    <div class="dhead">
+      ${avatarHTML(p,'bigav')}
+      <div class="nm">${esc(p.namaLengkap||'(tanpa nama)')}</div>
+      ${p.namaPanggilan?`<div class="pg">"${esc(p.namaPanggilan)}"</div>`:''}
+      <div>${p.status==='wafat'?'<span class="badge dead">✝ Telah wafat</span>':'<span class="badge" style="background:#dcfce7;color:#15803d">● Masih hidup</span>'}</div>
+      <button class="btn sm editbtn" id="dEdit">✎ Ubah data</button>
+    </div>
+    ${urutHtml}
+    ${p.tahunLahir?field('Tahun lahir',p.tahunLahir):''}
+    ${p.telepon?field('Telepon',p.telepon):''}
+    ${p.domisili?field('Domisili',p.domisili):''}
+    ${field('Jenis kel.', p.jk==='L'?'Laki-laki':p.jk==='P'?'Perempuan':'-')}
+    <div class="rels">
+      <h4>Orang tua</h4>${pa.map(relRow).join('')||'<div class="hint">Belum ada.</div>'}
+      <h4>Pasangan</h4>${sp.map(relRow).join('')||'<div class="hint">Belum ada.</div>'}
+      <h4>Anak</h4>${childrenSection(p)}
+    </div>
+    <div class="actions">
+      <button class="btn sm" id="aSpouse">➕ Pasangan</button>
+      <button class="btn sm" id="aChild">➕ Anak</button>
+      <button class="btn sm" id="aParent">➕ Orang tua</button>
+      <button class="btn sm" id="aTree">🎯 Pusatkan di sini</button>
+      <button class="btn sm" id="aEdit">✎ Ubah</button>
+      <button class="btn sm danger" id="aDel">🗑 Hapus</button>
+    </div>`;
+  d.querySelectorAll('.relrow').forEach(el=>el.onclick=()=>select(el.dataset.id));
+  d.querySelectorAll('[data-up]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); moveChild(b.dataset.up,-1); renderDetail(); renderTree(); });
+  d.querySelectorAll('[data-down]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); moveChild(b.dataset.down,1); renderDetail(); renderTree(); });
+  const selfUp=d.querySelector('#selfUp'), selfDown=d.querySelector('#selfDown');
+  if(selfUp) selfUp.onclick=()=>{ moveChild(p.id,-1); renderDetail(); renderTree(); };
+  if(selfDown) selfDown.onclick=()=>{ moveChild(p.id,1); renderDetail(); renderTree(); };
+  d.querySelector('#dEdit').onclick=()=>personForm(p);
+  d.querySelector('#aSpouse').onclick=()=>pickOrCreate(id=>{addSpouse(p.id,id);refresh();});
+  d.querySelector('#aChild').onclick=()=>pickOrCreate(id=>{addChild(p.id,id);refresh();});
+  d.querySelector('#aParent').onclick=()=>pickOrCreate(id=>{addParent(p.id,id);refresh();});
+  d.querySelector('#aTree').onclick=()=>{rootId=p.id;refresh();fit();};
+  d.querySelector('#aEdit').onclick=()=>personForm(p);
+  d.querySelector('#aDel').onclick=()=>confirmDialog('Hapus '+(p.namaLengkap||'orang ini')+'? Hubungannya juga dilepas.',()=>{ deletePerson(p.id); selectedId=null; refresh(); toast('Orang dihapus'); },'Hapus',true);
+}
+function field(k,v){ return `<div class="field"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`; }
+// daftar anak bernomor (per pasangan) + tombol urutkan ulang
+function childrenSection(p){
+  const us=unionsOf(p.id).filter(u=>u.children.length);
+  if(!us.length) return '<div class="hint">Belum ada.</div>';
+  let html='';
+  us.forEach(u=>{
+    u.children.forEach((cid,i)=>{
+      const c=P(cid); if(!c) return;
+      html+=`<div class="relrow" data-id="${cid}">
+        <span class="ord">${i+1}</span>${avatarHTML(c)}
+        <div style="flex:1"><div class="nm">${esc(c.namaLengkap)}</div>
+          <div class="sub" style="font-size:11px;color:var(--muted)">${esc(c.namaPanggilan||'')}</div></div>
+        <span class="reorder">
+          <button class="btn sm" data-up="${cid}" ${i===0?'disabled':''} title="Naikkan">↑</button>
+          <button class="btn sm" data-down="${cid}" ${i===u.children.length-1?'disabled':''} title="Turunkan">↓</button>
+        </span></div>`;
+    });
+  });
+  return html;
+}
+function moveChild(childId,dir){
+  const u=parentUnionOf(childId); if(!u) return;
+  const i=u.children.indexOf(childId), j=i+dir;
+  if(j<0||j>=u.children.length) return;
+  [u.children[i],u.children[j]]=[u.children[j],u.children[i]];
+  save();
+}
+
+/* ============ RENDER: TREE (descendants) ============ */
+const BOX_W=140,BOX_H=58,H_GAP=26,COUPLE_GAP=18,V_GAP=78;
+function buildTree(rootPid, visited){
+  if(visited.has(rootPid)) return null;
+  visited.add(rootPid);
+  const spouse = spousesOf(rootPid)[0]; // tampilkan 1 pasangan utama di prototipe
+  const coupleW = BOX_W + (spouse?COUPLE_GAP+BOX_W:0);
+  const kids = childrenOf(rootPid).map((c,i)=>{ const n=buildTree(c,visited); if(n) n.order=i+1; return n; }).filter(Boolean);
+  let subtreeW = coupleW;
+  if(kids.length){ const kw = kids.reduce((s,k)=>s+k.subtreeW,0)+H_GAP*(kids.length-1); subtreeW=Math.max(coupleW,kw); }
+  return {pid:rootPid, spouse, coupleW, kids, subtreeW};
+}
+function placeTree2(node,x,depth,out){
+  const y=depth*(BOX_H+V_GAP);
+  let centerX;
+  if(node.kids.length){
+    const kw=node.kids.reduce((s,k)=>s+k.subtreeW,0)+H_GAP*(node.kids.length-1);
+    let cx=x+(node.subtreeW-kw)/2;
+    const centers=[];
+    node.kids.forEach(k=>{ placeTree2(k,cx,depth+1,out); centers.push(k._cx); cx+=k.subtreeW+H_GAP; });
+    centerX=(centers[0]+centers[centers.length-1])/2;
+  } else centerX=x+node.subtreeW/2;
+  const coupleLeft=centerX-node.coupleW/2;
+  const mainX=coupleLeft+BOX_W/2;
+  node._cx=mainX;
+  out.nodes.push({pid:node.pid,x:mainX,y,blood:true,order:node.order});
+  if(node.spouse){
+    const spX=coupleLeft+BOX_W+COUPLE_GAP+BOX_W/2;
+    out.nodes.push({pid:node.spouse,x:spX,y,blood:false});
+    out.marriages.push({x1:mainX,x2:spX,y:y});
+  }
+  if(node.kids.length){
+    const parentX=node.spouse?(mainX + (coupleLeft+BOX_W+COUPLE_GAP+BOX_W/2))/2:mainX;
+    const py=y+BOX_H/2;
+    node.kids.forEach(k=>{ out.links.push({x1:parentX,y1:py,x2:k._cx,y2:(depth+1)*(BOX_H+V_GAP)-BOX_H/2}); });
+  }
+}
+// --- tata letak LELUHUR (ke atas dari fokus) ---
+function measureAnc(pid,visited){
+  if(visited.has(pid)) return {pid,w:BOX_W,parents:[]};
+  visited.add(pid);
+  const parents=parentsOf(pid).map(p=>measureAnc(p,visited));
+  let w=BOX_W;
+  if(parents.length){ const pw=parents.reduce((s,p)=>s+p.w,0)+H_GAP*(parents.length-1); w=Math.max(BOX_W,pw); }
+  return {pid,w,parents};
+}
+function placeAnc(node,x,depth,out){
+  const y=-depth*(BOX_H+V_GAP);
+  let centerX;
+  if(node.parents.length){
+    const pw=node.parents.reduce((s,p)=>s+p.w,0)+H_GAP*(node.parents.length-1);
+    let cx=x+(node.w-pw)/2; const centers=[];
+    node.parents.forEach(p=>{ placeAnc(p,cx,depth+1,out); centers.push(p._cx); cx+=p.w+H_GAP; });
+    centerX=(centers[0]+centers[centers.length-1])/2;
+  } else centerX=x+node.w/2;
+  node._cx=centerX;
+  if(depth>0) out.nodes.push({pid:node.pid,x:centerX,y,anc:true});   // fokus (depth 0) sudah digambar bagian keturunan
+  if(node.parents.length){
+    const py=-(depth+1)*(BOX_H+V_GAP);
+    const cs=node.parents.map(p=>p._cx);
+    const midX=(cs[0]+cs[cs.length-1])/2;
+    if(node.parents.length===2) out.marriages.push({x1:cs[0],x2:cs[1],y:py});
+    out.ancLinks.push({x1:centerX,y1:y-BOX_H/2,x2:midX,y2:py+BOX_H/2});
+  }
+}
+function pickDefaultRoot(){
+  if(rootId && P(rootId)) return rootId;
+  // orang tertua yg punya anak & tanpa orang tua tercatat
+  const cand=state.people.filter(p=>parentsOf(p.id).length===0 && childrenOf(p.id).length>0);
+  return (cand[0]||state.people[0])?.id||null;
+}
+function setFocus(id){ if(!P(id))return; rootId=id; selectedId=id; refresh(); fit(); }
+function renderTree(){
+  const vp=document.getElementById('viewport');
+  const empty=document.getElementById('treeEmpty');
+  rootId=pickDefaultRoot();
+  if(!rootId){ vp.innerHTML=''; empty.style.display='flex'; return; }
+  empty.style.display='none';
+  const tree=buildTree(rootId,new Set());
+  const out={nodes:[],links:[],marriages:[],ancLinks:[]};
+  placeTree2(tree,0,0,out);
+  // leluhur ke atas, dipusatkan di kotak fokus
+  const anc=measureAnc(rootId,new Set());
+  placeAnc(anc, tree._cx-anc.w/2, 0, out);
+  let html='';
+  out.links.concat(out.ancLinks).forEach(l=>{
+    const mid=(l.y1+l.y2)/2;
+    html+=`<path class="link" d="M${l.x1},${l.y1} C${l.x1},${mid} ${l.x2},${mid} ${l.x2},${l.y2}"/>`;
+  });
+  out.marriages.forEach(m=>{ html+=`<line class="marriage" x1="${m.x1}" y1="${m.y}" x2="${m.x2}" y2="${m.y}"/>`; });
+  nodePos={};
+  out.nodes.forEach(n=>{
+    const p=P(n.pid); if(!p) return;
+    nodePos[n.pid]={x:n.x,y:n.y};
+    const g=p.jk==='L'?'var(--male)':p.jk==='P'?'var(--female)':'#a3a3a3';
+    const dead=p.status==='wafat';
+    const init=(p.namaPanggilan||p.namaLengkap||'?').trim()[0]?.toUpperCase()||'?';
+    const x=n.x-BOX_W/2, y=n.y-BOX_H/2;
+    const sub=(p.tahunLahir?p.tahunLahir+' · ':'')+(p.domisili||'');
+    const canDrag = n.blood && n.pid!==rootId && (parentUnionOf(n.pid)?.children.length>1);
+    const isFocus = n.pid===rootId && n.blood;
+    html+=`<g class="node ${n.pid===selectedId?'sel':''} ${isFocus?'focus':''} ${canDrag?'draggable':''}" data-id="${n.pid}" transform="translate(${x},${y})">
+      <rect width="${BOX_W}" height="${BOX_H}" rx="10" ${dead?'style="stroke-dasharray:4 3"':''}/>
+      <circle cx="22" cy="${BOX_H/2}" r="15" fill="${g}" ${dead?'opacity="0.55"':''}/>
+      <text x="22" y="${BOX_H/2+5}" text-anchor="middle" fill="#fff" font-weight="700" font-size="14">${esc(init)}</text>
+      <text class="nm" x="44" y="${BOX_H/2-3}">${esc(trim(p.namaPanggilan||p.namaLengkap,13))}</text>
+      <text class="sub" x="44" y="${BOX_H/2+13}">${dead?'✝ ':''}${esc(trim(sub,16))}</text>
+      ${n.order?`<circle cx="6" cy="6" r="9" fill="var(--accent)" stroke="#fff" stroke-width="1.5"/><text x="6" y="9.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">${n.order}</text>`:''}
+    </g>`;
+  });
+  vp.innerHTML=html;
+  vp.querySelectorAll('.node').forEach(el=>{
+    el.addEventListener('mousedown',e=>startNodeDrag(e,el.dataset.id));
+    el.addEventListener('dblclick',()=>setFocus(el.dataset.id));
+  });
+  applyView();
+}
+
+/* ---------- root select ---------- */
+function renderRootSelect(){
+  const s=document.getElementById('rootSelect');
+  s.innerHTML=state.people.map(p=>`<option value="${p.id}" ${p.id===rootId?'selected':''}>${esc(p.namaLengkap||'(tanpa nama)')}</option>`).join('');
+  s.onchange=()=>{ rootId=s.value; renderTree(); fit(); };
+}
+
+/* ============ PAN / ZOOM ============ */
+const svg=document.getElementById('svg');
+function applyView(){ document.getElementById('viewport').setAttribute('transform',`translate(${view.x},${view.y}) scale(${view.k})`); }
+let drag=null;
+svg.addEventListener('mousedown',e=>{ if(e.target.closest('.node'))return; drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y}; svg.classList.add('grabbing'); });
+window.addEventListener('mousemove',e=>{ if(!drag)return; view.x=drag.vx+(e.clientX-drag.x); view.y=drag.vy+(e.clientY-drag.y); applyView(); });
+window.addEventListener('mouseup',()=>{ drag=null; svg.classList.remove('grabbing'); });
+// --- drag kotak anak di canvas untuk mengurutkan ulang ---
+function startNodeDrag(e,pid){
+  if(e.button!==0) return;
+  e.stopPropagation();                 // jangan picu geser canvas
+  nodeDrag={pid,x0:e.clientX,y0:e.clientY,moved:false};
+}
+window.addEventListener('mousemove',e=>{
+  if(!nodeDrag) return;
+  if(!nodeDrag.moved && Math.hypot(e.clientX-nodeDrag.x0,e.clientY-nodeDrag.y0)>5){ nodeDrag.moved=true; document.body.style.userSelect='none'; }
+  if(nodeDrag.moved){
+    const g=document.querySelector(`.node[data-id="${nodeDrag.pid}"]`), base=nodePos[nodeDrag.pid];
+    if(g&&base){ const dx=(e.clientX-nodeDrag.x0)/view.k; g.setAttribute('transform',`translate(${base.x-BOX_W/2+dx},${base.y-BOX_H/2})`); g.style.opacity='0.75'; }
+  }
+});
+window.addEventListener('mouseup',e=>{
+  if(!nodeDrag) return;
+  const nd=nodeDrag; nodeDrag=null; document.body.style.userSelect='';
+  if(!nd.moved){ select(nd.pid); return; }   // gerakan kecil = klik biasa -> pilih orang
+  const u=parentUnionOf(nd.pid);
+  if(!u || u.children.length<2){ renderTree(); return; }
+  const r=svg.getBoundingClientRect();
+  const cursorX=(e.clientX-r.left-view.x)/view.k;        // posisi kursor pada koordinat layout
+  const sibs=u.children.filter(id=>id!==nd.pid);
+  const visibleSibs=sibs.filter(id=>nodePos[id]);        // saudara yg sedang tampil di pohon
+  if(!visibleSibs.length){ renderTree(); toast('Untuk mengurutkan orang ini, tampilkan pohon dari orang tuanya, atau pakai tombol ↑/↓ di rincian.'); return; }
+  let idx=0; visibleSibs.forEach(id=>{ if(nodePos[id].x < cursorX) idx++; });
+  const order=[...sibs]; order.splice(idx,0,nd.pid);
+  u.children=order; save(); renderDetail(); renderTree();
+});
+svg.addEventListener('wheel',e=>{ e.preventDefault(); const f=e.deltaY<0?1.1:0.9; const r=svg.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  view.x=mx-(mx-view.x)*f; view.y=my-(my-view.y)*f; view.k*=f; applyView(); },{passive:false});
+document.getElementById('zoomIn').onclick=()=>{view.k*=1.2;applyView();};
+document.getElementById('zoomOut').onclick=()=>{view.k/=1.2;applyView();};
+document.getElementById('zoomFit').onclick=fit;
+function fit(){
+  const vp=document.getElementById('viewport'); const b=vp.getBBox(); if(!b.width)return;
+  const r=svg.getBoundingClientRect();
+  const k=Math.min(r.width/(b.width+80),r.height/(b.height+80),1.4);
+  view.k=k; view.x=(r.width-b.width*k)/2-b.x*k; view.y=30-b.y*k; applyView();
+}
+
+/* ============ MODALS ============ */
+function modal(html){
+  const o=document.createElement('div'); o.className='overlay';
+  o.innerHTML=`<div class="modal">${html}</div>`;
+  o.addEventListener('mousedown',e=>{ if(e.target===o) o.remove(); });
+  document.body.appendChild(o); return o;
+}
+// notifikasi & konfirmasi sendiri (alert/confirm bawaan diblokir di dalam iframe preview)
+function toast(msg,type){
+  const t=document.createElement('div'); t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:200;color:#fff;'+
+    'padding:11px 18px;border-radius:10px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw;'+
+    'background:'+(type==='error'?'#dc2626':'#1e293b');
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(()=>t.remove(),300); },2600);
+}
+function confirmDialog(message,onYes,yesLabel='Ya',danger=false){
+  const o=modal(`<h3>Konfirmasi</h3><div class="mbody">${esc(message)}</div>
+    <div class="mfoot"><button class="btn" id="c_no">Batal</button>
+    <button class="btn ${danger?'danger':'primary'}" id="c_yes">${esc(yesLabel)}</button></div>`);
+  o.querySelector('#c_no').onclick=()=>o.remove();
+  o.querySelector('#c_yes').onclick=()=>{ o.remove(); onYes(); };
+}
+function personForm(existing){
+  const p=existing||{jk:'L',status:'hidup'};
+  const o=modal(`
+    <h3>${existing?'Ubah data':'Tambah orang'}</h3>
+    <div class="mbody">
+      <div class="frow"><label>Nama lengkap *</label><input id="f_nl" value="${esc(p.namaLengkap||'')}"></div>
+      <div class="frow"><label>Nama panggilan</label><input id="f_np" value="${esc(p.namaPanggilan||'')}"></div>
+      <div class="frow"><label>Nomor telepon</label><input id="f_tel" value="${esc(p.telepon||'')}"></div>
+      <div class="frow"><label>Domisili terakhir</label><input id="f_dom" value="${esc(p.domisili||'')}"></div>
+      <div class="frow"><label>Tahun lahir (opsional)</label><input id="f_thn" type="number" inputmode="numeric" placeholder="mis. 1995" value="${esc(p.tahunLahir||'')}"></div>
+      <div class="frow"><label>Jenis kelamin</label>
+        <div class="seg" id="f_jk">
+          <button data-v="L" class="${p.jk==='L'?'on':''}">Laki-laki</button>
+          <button data-v="P" class="${p.jk==='P'?'on':''}">Perempuan</button>
+        </div></div>
+      <div class="frow"><label>Status</label>
+        <div class="seg" id="f_st">
+          <button data-v="hidup" class="${p.status!=='wafat'?'on':''}">Masih hidup</button>
+          <button data-v="wafat" class="${p.status==='wafat'?'on':''}">Telah wafat</button>
+        </div></div>
+    </div>
+    <div class="mfoot"><button class="btn" id="f_cancel">Batal</button><button class="btn primary" id="f_save">Simpan</button></div>`);
+  let jk=p.jk||'L', st=p.status||'hidup';
+  o.querySelectorAll('#f_jk button').forEach(b=>b.onclick=()=>{jk=b.dataset.v;o.querySelectorAll('#f_jk button').forEach(x=>x.classList.toggle('on',x===b));});
+  o.querySelectorAll('#f_st button').forEach(b=>b.onclick=()=>{st=b.dataset.v;o.querySelectorAll('#f_st button').forEach(x=>x.classList.toggle('on',x===b));});
+  o.querySelector('#f_cancel').onclick=()=>o.remove();
+  o.querySelector('#f_nl').oninput=e=>e.target.style.borderColor='';
+  o.querySelector('#f_save').onclick=()=>{
+    const fnl=o.querySelector('#f_nl'); const nl=fnl.value.trim();
+    if(!nl){ fnl.style.borderColor='var(--danger)'; fnl.focus(); toast('Nama lengkap wajib diisi','error'); return; }
+    const data={namaLengkap:nl,namaPanggilan:o.querySelector('#f_np').value.trim(),
+      telepon:o.querySelector('#f_tel').value.trim(),domisili:o.querySelector('#f_dom').value.trim(),
+      tahunLahir:o.querySelector('#f_thn').value.trim(),jk,status:st};
+    if(existing){ Object.assign(existing,data); save(); } else { selectedId=addPerson(data); }
+    o.remove(); refresh();
+  };
+  setTimeout(()=>o.querySelector('#f_nl').focus(),50);
+}
+// pilih orang yg sudah ada ATAU buat baru, lalu callback(id)
+function pickOrCreate(cb){
+  const o=modal(`
+    <h3>Hubungkan orang</h3>
+    <div class="mbody">
+      <div class="hint">Pilih orang yang sudah ada, atau buat orang baru.</div>
+      <input class="search" id="pk_search" placeholder="Cari nama..." style="margin-bottom:10px">
+      <button class="btn primary" id="pk_new" style="width:100%;justify-content:center;margin-bottom:10px">➕ Buat orang baru</button>
+      <div id="pk_list" style="max-height:300px;overflow:auto"></div>
+    </div>
+    <div class="mfoot"><button class="btn" id="pk_cancel">Batal</button></div>`);
+  function draw(){
+    const q=(o.querySelector('#pk_search').value||'').toLowerCase();
+    const items=state.people.filter(p=>p.id!==selectedId && (!q||(p.namaLengkap+' '+(p.namaPanggilan||'')).toLowerCase().includes(q)));
+    o.querySelector('#pk_list').innerHTML=items.map(p=>`<div class="pickitem" data-id="${p.id}">${avatarHTML(p)}
+      <div><div class="nm" style="font-size:13px;font-weight:600">${esc(p.namaLengkap)}</div>
+      <div class="sub" style="font-size:11px;color:var(--muted)">${esc(p.namaPanggilan||'')}${p.domisili?' · '+esc(p.domisili):''}</div></div></div>`).join('')||'<div class="hint">Tidak ada hasil.</div>';
+    o.querySelectorAll('.pickitem').forEach(el=>el.onclick=()=>{o.remove();cb(el.dataset.id);});
+  }
+  o.querySelector('#pk_search').oninput=draw;
+  o.querySelector('#pk_cancel').onclick=()=>o.remove();
+  o.querySelector('#pk_new').onclick=()=>{ o.remove();
+    // buat orang baru lewat form, lalu hubungkan
+    const o2=personFormReturning(id=>cb(id));
+  };
+  draw();
+  setTimeout(()=>o.querySelector('#pk_search').focus(),50);
+}
+function personFormReturning(cb){
+  // varian personForm yg mengembalikan id baru ke cb tanpa mengubah selectedId
+  const o=modal(`
+    <h3>Buat orang baru</h3>
+    <div class="mbody">
+      <div class="frow"><label>Nama lengkap *</label><input id="f_nl"></div>
+      <div class="frow"><label>Nama panggilan</label><input id="f_np"></div>
+      <div class="frow"><label>Nomor telepon</label><input id="f_tel"></div>
+      <div class="frow"><label>Domisili terakhir</label><input id="f_dom"></div>
+      <div class="frow"><label>Tahun lahir (opsional)</label><input id="f_thn" type="number" inputmode="numeric" placeholder="mis. 1995"></div>
+      <div class="frow"><label>Jenis kelamin</label><div class="seg" id="f_jk">
+        <button data-v="L" class="on">Laki-laki</button><button data-v="P">Perempuan</button></div></div>
+      <div class="frow"><label>Status</label><div class="seg" id="f_st">
+        <button data-v="hidup" class="on">Masih hidup</button><button data-v="wafat">Telah wafat</button></div></div>
+    </div>
+    <div class="mfoot"><button class="btn" id="f_cancel">Batal</button><button class="btn primary" id="f_save">Simpan & hubungkan</button></div>`);
+  let jk='L',st='hidup';
+  o.querySelectorAll('#f_jk button').forEach(b=>b.onclick=()=>{jk=b.dataset.v;o.querySelectorAll('#f_jk button').forEach(x=>x.classList.toggle('on',x===b));});
+  o.querySelectorAll('#f_st button').forEach(b=>b.onclick=()=>{st=b.dataset.v;o.querySelectorAll('#f_st button').forEach(x=>x.classList.toggle('on',x===b));});
+  o.querySelector('#f_cancel').onclick=()=>o.remove();
+  o.querySelector('#f_nl').oninput=e=>e.target.style.borderColor='';
+  o.querySelector('#f_save').onclick=()=>{
+    const fnl=o.querySelector('#f_nl'); const nl=fnl.value.trim();
+    if(!nl){ fnl.style.borderColor='var(--danger)'; fnl.focus(); toast('Nama lengkap wajib diisi','error'); return; }
+    const id=addPerson({namaLengkap:nl,namaPanggilan:o.querySelector('#f_np').value.trim(),
+      telepon:o.querySelector('#f_tel').value.trim(),domisili:o.querySelector('#f_dom').value.trim(),
+      tahunLahir:o.querySelector('#f_thn').value.trim(),jk,status:st});
+    o.remove(); cb(id);
+  };
+  setTimeout(()=>o.querySelector('#f_nl').focus(),50);
+}
+
+/* ============ HELPERS ============ */
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function trim(s,n){ s=s||''; return s.length>n?s.slice(0,n-1)+'…':s; }
+function select(id){ selectedId=id; renderList(); renderDetail(); renderTree(); }
+function refresh(){ renderList(); renderDetail(); renderRootSelect(); renderTree(); }
+
+/* ============ TOOLBAR ============ */
+document.getElementById('btnAdd').onclick=()=>personForm(null);
+document.getElementById('searchBox').oninput=renderList;
+document.getElementById('btnExport').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='silsilah-keluarga.json'; a.click();
+};
+document.getElementById('btnImport').onclick=()=>document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange=e=>{
+  const f=e.target.files[0]; if(!f)return; const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(d.people&&d.unions){ state=d; repairUnions(); save(); selectedId=null; rootId=null; refresh(); fit(); toast('Data berhasil diimpor'); } else toast('Format file tidak dikenali.','error'); }catch(err){ toast('Gagal membaca file.','error'); } };
+  r.readAsText(f); e.target.value='';
+};
+document.getElementById('btnReset').onclick=()=>confirmDialog('Kosongkan SEMUA data? Tindakan ini tidak bisa dibatalkan.',()=>{ state={people:[],unions:[]}; selectedId=null; rootId=null; save(); refresh(); toast('Data dikosongkan'); },'Kosongkan',true);
+document.getElementById('btnSample').onclick=()=>{ if(state.people.length) confirmDialog('Ganti data sekarang dengan contoh?',loadSample,'Ganti'); else loadSample(); };
+
+/* ============ SAMPLE DATA ============ */
+function loadSample(){
+  state={people:[],unions:[]};
+  const m=(nl,np,jk,dom,status='hidup',tahunLahir='')=>addPerson({namaLengkap:nl,namaPanggilan:np,jk,domisili:dom,status,telepon:'',tahunLahir});
+  const kakek=m('Soeharto Wijaya','Pak To','L','Yogyakarta','wafat');
+  const nenek=m('Siti Aminah','Bu Sit','P','Yogyakarta','wafat');
+  const ayah=m('Budi Wijaya','Budi','L','Jakarta','hidup','1968');
+  const ibu=m('Dewi Lestari','Dewi','P','Jakarta','hidup','1972');
+  const paman=m('Agus Wijaya','Agus','L','Surabaya','hidup','1970');
+  const anak1=m('Putra Wijaya','Putra','L','Bandung','hidup','1992');
+  const menantu=m('Rina Sari','Rina','P','Bandung','hidup','1994');
+  const anak2=m('Sari Wijaya','Sari','P','Jakarta','hidup','1996');
+  const cucu=m('Bima Wijaya','Bima','L','Bandung','hidup','2018');
+  addSpouse(kakek,nenek);
+  addChild(kakek,ayah); addChild(kakek,paman);
+  addSpouse(ayah,ibu);
+  addChild(ayah,anak1); addChild(ayah,anak2);
+  addSpouse(anak1,menantu);
+  addChild(anak1,cucu);
+  rootId=kakek; selectedId=null; save(); refresh(); fit();
+}
+
+/* ============ GOOGLE DRIVE SYNC ============ */
+const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
+const DRIVE_FILENAME='silsilah-keluarga.json';
+let CLIENT_ID=localStorage.getItem('g_client_id')||'';
+let tokenClient=null, accessToken=null, tokenExpiry=0;
+let driveFileId=localStorage.getItem('drive_file_id')||null;
+let driveConnected=false, pushTimer=null;
+
+function gisReady(){ return !!(window.google&&google.accounts&&google.accounts.oauth2); }
+function initToken(){
+  if(!CLIENT_ID || !gisReady()) return false;
+  tokenClient=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:DRIVE_SCOPE,callback:()=>{}});
+  return true;
+}
+function getToken(interactive){
+  return new Promise((resolve,reject)=>{
+    if(accessToken && Date.now()<tokenExpiry-60000) return resolve(accessToken);
+    if(!tokenClient && !initToken()) return reject(new Error('Google belum siap'));
+    tokenClient.callback=(r)=>{ if(r&&r.access_token){ accessToken=r.access_token; tokenExpiry=Date.now()+((r.expires_in||3600)*1000); resolve(accessToken); } else reject(r||new Error('Token gagal')); };
+    try{ tokenClient.requestAccessToken({prompt: interactive?'':'none'}); }catch(e){ reject(e); }
+  });
+}
+async function driveReq(url,opts){
+  const t=await getToken(false).catch(()=>getToken(true));
+  opts=opts||{}; opts.headers=Object.assign({Authorization:'Bearer '+t}, opts.headers||{});
+  let res=await fetch(url,opts);
+  if(res.status===401){ accessToken=null; const t2=await getToken(true); opts.headers.Authorization='Bearer '+t2; res=await fetch(url,opts); }
+  if(!res.ok){ const tx=await res.text().catch(()=>''); throw new Error('Drive '+res.status+' '+tx.slice(0,140)); }
+  return res;
+}
+async function driveFind(){
+  if(driveFileId){ try{ const r=await driveReq('https://www.googleapis.com/drive/v3/files/'+driveFileId+'?fields=id,trashed'); const d=await r.json(); if(d.id && !d.trashed) return {id:d.id}; }catch(e){} }
+  const q="name='"+DRIVE_FILENAME+"' and trashed=false";
+  const r=await driveReq('https://www.googleapis.com/drive/v3/files?spaces=drive&fields=files(id,name)&q='+encodeURIComponent(q));
+  const d=await r.json(); return (d.files&&d.files[0])||null;
+}
+async function driveDownload(id){ const r=await driveReq('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media'); return r.json(); }
+async function driveCreate(content){
+  const r=await driveReq('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:DRIVE_FILENAME,mimeType:'application/json'})});
+  const d=await r.json(); await driveUpdate(d.id,content); return d.id;
+}
+async function driveUpdate(id,content){
+  await driveReq('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(content)});
+}
+function schedulePush(){
+  if(!driveConnected||!driveFileId) return;
+  setStatus('saving'); clearTimeout(pushTimer);
+  pushTimer=setTimeout(async()=>{ try{ await driveUpdate(driveFileId,state); setStatus('saved'); }catch(e){ console.error(e); setStatus('error'); } },1200);
+}
+async function connectDrive(interactive){
+  if(!CLIENT_ID){ if(interactive) driveModal(); return; }
+  try{
+    await getToken(interactive);
+    const f=await driveFind();
+    if(f){
+      driveFileId=f.id; localStorage.setItem('drive_file_id',f.id);
+      const remote=await driveDownload(f.id);
+      const remoteEmpty=!remote||!Array.isArray(remote.people)||remote.people.length===0;
+      const same=JSON.stringify(remote)===JSON.stringify(state);
+      if(remoteEmpty && state.people.length>0){ await driveUpdate(f.id,state); }       // jangan timpa data lokal dengan kosong
+      else if(state.people.length===0 || same || !interactive){ if(!remoteEmpty){ state=remote; repairUnions(); } }
+      else { const c=await chooseConflict(); if(c==='drive'){ state=remote; repairUnions(); } else { await driveUpdate(f.id,state); } }
+    } else {
+      driveFileId=await driveCreate(state); localStorage.setItem('drive_file_id',driveFileId);
+    }
+    driveConnected=true; localStorage.setItem('silsilah-data',JSON.stringify(state));
+    setStatus('saved'); updateDriveBtn(); refresh(); fit();
+    if(interactive) toast('Tersambung ke Google Drive');
+  }catch(e){ console.error(e); if(interactive) toast('Gagal menyambung. Periksa Client ID & origin. ('+(e.message||'')+')','error'); }
+}
+function disconnectDrive(){ accessToken=null; driveConnected=false; setStatus('off'); updateDriveBtn(); toast('Terputus dari Drive — data lokal tetap tersimpan.'); }
+function chooseConflict(){
+  return new Promise(res=>{
+    const o=modal('<h3>Data berbeda</h3><div class="mbody">Data di Google Drive berbeda dengan data di perangkat ini. Mana yang ingin dipakai?<br><span class="hint">Yang tidak dipilih akan tertimpa.</span></div><div class="mfoot"><button class="btn" id="cf_local">Pakai data perangkat ini</button><button class="btn primary" id="cf_drive">Pakai data Drive</button></div>');
+    o.querySelector('#cf_drive').onclick=()=>{o.remove();res('drive');};
+    o.querySelector('#cf_local').onclick=()=>{o.remove();res('local');};
+  });
+}
+function setStatus(s){
+  const el=document.getElementById('driveStatus'); if(!el) return;
+  const map={off:['off','● Lokal saja'],saving:['saving','⟳ Menyimpan…'],saved:['saved','✓ Tersimpan di Drive'],error:['error','⚠ Gagal menyimpan']};
+  const v=map[s]||map.off; el.className='drivestatus '+v[0]; el.textContent=v[1];
+}
+function updateDriveBtn(){ const b=document.getElementById('btnDrive'); if(b) b.textContent=driveConnected?'☁ Drive aktif':'☁ Hubungkan Drive'; }
+function driveModal(){
+  const o=modal('<h3>Google Drive</h3><div class="mbody">'+
+    '<div class="hint">Tempel <b>Client ID</b> dari Google Cloud, lalu Login. Data silsilah disimpan ke satu file (<b>'+DRIVE_FILENAME+'</b>) di Drive-mu; aplikasi hanya bisa mengakses file itu, bukan file lainmu.</div>'+
+    '<div class="frow"><label>Google Client ID</label><input id="g_cid" placeholder="...apps.googleusercontent.com" value="'+esc(CLIENT_ID)+'"></div>'+
+    '<div class="hint">Status: '+(driveConnected?'tersambung ✓':'belum tersambung')+'</div>'+
+    '</div><div class="mfoot">'+
+    (driveConnected?'<button class="btn danger" id="g_out">Putuskan</button>':'')+
+    '<button class="btn" id="g_cancel">Tutup</button>'+
+    '<button class="btn primary" id="g_login">'+(driveConnected?'Muat ulang dari Drive':'Sambungkan & Login')+'</button></div>');
+  o.querySelector('#g_cancel').onclick=()=>o.remove();
+  o.querySelector('#g_login').onclick=()=>{
+    const cid=o.querySelector('#g_cid').value.trim();
+    if(!cid){ toast('Client ID belum diisi','error'); return; }
+    CLIENT_ID=cid; localStorage.setItem('g_client_id',cid); tokenClient=null; initToken();
+    o.remove(); connectDrive(true);
+  };
+  const out=o.querySelector('#g_out'); if(out) out.onclick=()=>{ o.remove(); disconnectDrive(); };
+}
+function bootDrive(){
+  setStatus('off'); updateDriveBtn();
+  document.getElementById('btnDrive').onclick=driveModal;
+  if(CLIENT_ID){ let tries=0; const t=()=>{ if(initToken()){ connectDrive(false); } else if(tries++<25){ setTimeout(t,400); } }; t(); }
+}
+
+/* ============ INIT ============ */
+repairUnions(); save();
+refresh();
+setTimeout(fit,100);
+bootDrive();
+</script>
+</body>
+</html>
