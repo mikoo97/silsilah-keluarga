@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Silsilah Keluarga</title>
+<title>Happy Family</title>
 <script src="https://accounts.google.com/gsi/client" async></script>
 <style>
   :root{
@@ -30,9 +30,20 @@
   .drivestatus.saving{background:#fef9c3;color:#854d0e}
   .drivestatus.saved{background:#dcfce7;color:#15803d}
   .drivestatus.error{background:#fee2e2;color:#b91c1c}
-  .main{display:flex;flex:1;min-height:0}
-  /* sidebar */
-  .sidebar{width:300px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0}
+  .main{display:flex;flex:1;min-height:0;position:relative}
+  .iconbtn{font-size:18px;padding:5px 11px;line-height:1}
+  .backdrop{position:absolute;inset:0;background:rgba(15,23,42,.35);z-index:35;opacity:0;pointer-events:none;transition:opacity .2s}
+  .backdrop.show{opacity:1;pointer-events:auto}
+  /* sidebar = drawer (sembunyi sampai dibutuhkan) */
+  .sidebar{position:absolute;top:0;left:0;bottom:0;width:300px;max-width:85%;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:40;transform:translateX(-100%);transition:transform .22s ease;box-shadow:2px 0 18px rgba(0,0,0,.12)}
+  .sidebar.open{transform:none}
+  /* pencarian "Pusatkan di" */
+  .focuspick{position:relative}
+  .focuspick .search{min-width:190px;padding:6px 10px}
+  .focuslist{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:8px;margin-top:4px;max-height:260px;overflow:auto;z-index:25;box-shadow:0 8px 24px rgba(0,0,0,.14);display:none}
+  .focuslist.show{display:block}
+  .focuslist .fitem{padding:7px 10px;font-size:13px;cursor:pointer;display:flex;gap:8px;align-items:center}
+  .focuslist .fitem:hover{background:#f1f5f9}
   .sidebar .top{padding:10px;border-bottom:1px solid var(--line)}
   .search{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
   .people{overflow-y:auto;flex:1;padding:6px}
@@ -105,24 +116,40 @@
   .pickitem{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer}
   .pickitem:hover{background:#f1f5f9}
   .hint{font-size:12px;color:var(--muted);margin-bottom:8px}
+  .detailclose{display:none;position:absolute;top:8px;right:8px;z-index:3;border:1px solid var(--line);background:#fff;border-radius:8px;width:32px;height:32px;align-items:center;justify-content:center;cursor:pointer;font-size:15px}
+  .marriage.divorced{stroke:#cbd5e1;stroke-dasharray:5 4}
+  /* ===== MOBILE ===== */
+  @media (max-width:760px){
+    header{flex-wrap:wrap;gap:6px;padding:8px 10px}
+    header h1{font-size:16px;flex:1 1 auto;min-width:0}
+    header .brand{display:none}
+    .btn{padding:6px 9px;font-size:12px}
+    .drivestatus{font-size:11px;padding:4px 8px}
+    .detail{position:absolute;top:0;right:0;bottom:0;width:90%;max-width:360px;z-index:40;transform:translateX(100%);transition:transform .22s ease;box-shadow:-2px 0 18px rgba(0,0,0,.14);border-left:1px solid var(--line)}
+    .detail.open{transform:none}
+    .detailclose{display:flex}
+    .sidebar{width:86%}
+    .treebar{flex-wrap:wrap;max-width:72vw}
+    .focuspick .search{min-width:150px}
+    .zoombtns .btn{width:42px;height:42px}
+  }
 </style>
 </head>
 <body>
 <div class="app">
   <header>
+    <button class="btn iconbtn" id="btnMenu" title="Tampilkan/sembunyikan daftar nama">☰</button>
     <div class="brand"><div class="logo">🌳</div></div>
-    <h1>Silsilah Keluarga</h1>
+    <h1>Happy Family</h1>
     <span id="driveStatus" class="drivestatus off">● Lokal saja</span>
     <button class="btn" id="btnDrive">☁ Hubungkan Drive</button>
-    <button class="btn" id="btnSample">Muat contoh</button>
-    <button class="btn" id="btnExport">⬇ Ekspor</button>
-    <button class="btn" id="btnImport">⬆ Impor</button>
+    <button class="btn" id="btnExport" title="Cadangkan ke file">⬇ Ekspor</button>
     <button class="btn danger" id="btnReset">Kosongkan</button>
-    <input type="file" id="fileInput" accept="application/json" hidden>
   </header>
   <div class="main">
-    <!-- sidebar -->
-    <aside class="sidebar">
+    <div class="backdrop" id="backdrop"></div>
+    <!-- sidebar (drawer) -->
+    <aside class="sidebar" id="sidebar">
       <div class="top">
         <button class="btn primary" style="width:100%;justify-content:center;margin-bottom:8px" id="btnAdd">➕ Tambah orang</button>
         <input class="search" id="searchBox" placeholder="Cari nama...">
@@ -134,13 +161,16 @@
     <div class="treewrap">
       <div class="treebar">
         <span style="font-size:13px;color:var(--muted)">Pusatkan di:</span>
-        <select id="rootSelect"></select>
+        <div class="focuspick">
+          <input id="focusSearch" class="search" placeholder="cari nama untuk dipusatkan..." autocomplete="off">
+          <div id="focusList" class="focuslist"></div>
+        </div>
         <span class="treehint">· klik 2× orang untuk memusatkan (leluhur ↑ &amp; keturunan ↓)</span>
       </div>
       <svg id="svg"><g id="viewport"></g></svg>
       <div class="treeempty" id="treeEmpty">
         <div style="font-size:40px">🌳</div>
-        <div>Belum ada data.<br>Klik <b>Tambah orang</b> atau <b>Muat contoh</b> untuk mulai.</div>
+        <div>Belum ada data.<br>Klik <b>☰</b> lalu <b>Tambah orang</b> untuk mulai.</div>
       </div>
       <div class="zoombtns">
         <button class="btn" id="zoomIn">+</button>
@@ -148,9 +178,10 @@
         <button class="btn" id="zoomFit" title="Pas ke layar">⤢</button>
       </div>
     </div>
-    <!-- detail -->
+    <!-- detail (drawer) -->
     <aside class="detail" id="detail">
-      <div class="empty">Pilih seseorang dari daftar untuk melihat & mengelola hubungannya.</div>
+      <button class="detailclose" id="detailClose" title="Tutup">✕</button>
+      <div id="detailBody"><div class="empty">Pilih seseorang dari pohon atau daftar (☰) untuk melihat & mengelola hubungannya.</div></div>
     </aside>
   </div>
 </div>
@@ -254,10 +285,10 @@ function relRow(id){
     <div class="sub" style="font-size:11px;color:var(--muted)">${esc(p.namaPanggilan||'')}</div></div></div>`;
 }
 function renderDetail(){
-  const d=document.getElementById('detail');
-  if(!selectedId || !P(selectedId)){ d.innerHTML='<div class="empty">Pilih seseorang dari daftar untuk melihat & mengelola hubungannya.</div>'; return; }
+  const d=document.getElementById('detailBody');
+  if(!selectedId || !P(selectedId)){ d.innerHTML='<div class="empty">Pilih seseorang dari pohon atau daftar (☰) untuk melihat & mengelola hubungannya.</div>'; return; }
   const p=P(selectedId);
-  const sp=spousesOf(p.id), pa=parentsOf(p.id);
+  const pa=parentsOf(p.id);
   const pu=parentUnionOf(p.id);
   let urutHtml='';
   if(pu){
@@ -286,7 +317,7 @@ function renderDetail(){
     ${field('Jenis kel.', p.jk==='L'?'Laki-laki':p.jk==='P'?'Perempuan':'-')}
     <div class="rels">
       <h4>Orang tua</h4>${pa.map(relRow).join('')||'<div class="hint">Belum ada.</div>'}
-      <h4>Pasangan</h4>${sp.map(relRow).join('')||'<div class="hint">Belum ada.</div>'}
+      <h4>Pasangan</h4>${spousesSection(p)}
       <h4>Anak</h4>${childrenSection(p)}
     </div>
     <div class="actions">
@@ -300,6 +331,7 @@ function renderDetail(){
   d.querySelectorAll('.relrow').forEach(el=>el.onclick=()=>select(el.dataset.id));
   d.querySelectorAll('[data-up]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); moveChild(b.dataset.up,-1); renderDetail(); renderTree(); });
   d.querySelectorAll('[data-down]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); moveChild(b.dataset.down,1); renderDetail(); renderTree(); });
+  d.querySelectorAll('[data-divorce]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const u=state.unions.find(x=>x.id===b.dataset.divorce); setUnionStatus(b.dataset.divorce, (u&&u.status==='cerai')?'menikah':'cerai'); renderDetail(); renderTree(); });
   const selfUp=d.querySelector('#selfUp'), selfDown=d.querySelector('#selfDown');
   if(selfUp) selfUp.onclick=()=>{ moveChild(p.id,-1); renderDetail(); renderTree(); };
   if(selfDown) selfDown.onclick=()=>{ moveChild(p.id,1); renderDetail(); renderTree(); };
@@ -332,6 +364,20 @@ function childrenSection(p){
   });
   return html;
 }
+// daftar pasangan + status menikah/cerai + tombol ubah status
+function spousesSection(p){
+  const us=unionsOf(p.id).filter(u=>u.partners.length===2);
+  if(!us.length) return '<div class="hint">Belum ada.</div>';
+  return us.map(u=>{
+    const spId=u.partners.find(x=>x!==p.id); const s=P(spId); if(!s) return '';
+    const cerai=u.status==='cerai';
+    return `<div class="relrow" data-id="${spId}">${avatarHTML(s)}
+      <div style="flex:1"><div class="nm">${esc(s.namaLengkap)}</div>
+        <div class="sub" style="font-size:11px;color:${cerai?'var(--danger)':'var(--muted)'}">${cerai?'⚯ Sudah cerai':'Menikah'}${s.namaPanggilan?' · '+esc(s.namaPanggilan):''}</div></div>
+      <button class="btn sm" data-divorce="${u.id}" title="Ubah status pernikahan">${cerai?'↺ Menikah':'⚯ Cerai'}</button></div>`;
+  }).join('');
+}
+function setUnionStatus(uId,status){ const u=state.unions.find(x=>x.id===uId); if(u){ u.status=status; save(); } }
 function moveChild(childId,dir){
   const u=parentUnionOf(childId); if(!u) return;
   const i=u.children.indexOf(childId), j=i+dir;
@@ -345,36 +391,76 @@ const BOX_W=140,BOX_H=58,H_GAP=26,COUPLE_GAP=18,V_GAP=78;
 function buildTree(rootPid, visited){
   if(visited.has(rootPid)) return null;
   visited.add(rootPid);
-  const spouse = spousesOf(rootPid)[0]; // tampilkan 1 pasangan utama di prototipe
-  const coupleW = BOX_W + (spouse?COUPLE_GAP+BOX_W:0);
-  const kids = childrenOf(rootPid).map((c,i)=>{ const n=buildTree(c,visited); if(n) n.order=i+1; return n; }).filter(Boolean);
-  let subtreeW = coupleW;
-  if(kids.length){ const kw = kids.reduce((s,k)=>s+k.subtreeW,0)+H_GAP*(kids.length-1); subtreeW=Math.max(coupleW,kw); }
-  return {pid:rootPid, spouse, coupleW, kids, subtreeW};
+  const us=unionsOf(rootPid);
+  const unions=us.map(u=>{
+    const spId=u.partners.find(x=>x!==rootPid)||null;
+    const kids=u.children.map((c,i)=>{ const n=buildTree(c,visited); if(n) n.order=i+1; return n; }).filter(Boolean);
+    let childrenW=0;
+    if(kids.length) childrenW=kids.reduce((s,k)=>s+k.subtreeW,0)+H_GAP*(kids.length-1);
+    return {spouseId:spId, divorced:u.status==='cerai', kids, childrenW};
+  });
+  const nspouse=unions.filter(u=>u.spouseId).length;
+  const coupleW=BOX_W + nspouse*(COUPLE_GAP+BOX_W);
+  const withKids=unions.filter(u=>u.kids.length);
+  let childrenTotal=withKids.reduce((s,u)=>s+u.childrenW,0);
+  if(withKids.length>1) childrenTotal+=H_GAP*(withKids.length-1);
+  const subtreeW=Math.max(coupleW, childrenTotal, BOX_W);
+  return {pid:rootPid, unions, coupleW, subtreeW};
 }
 function placeTree2(node,x,depth,out){
   const y=depth*(BOX_H+V_GAP);
-  let centerX;
-  if(node.kids.length){
-    const kw=node.kids.reduce((s,k)=>s+k.subtreeW,0)+H_GAP*(node.kids.length-1);
-    let cx=x+(node.subtreeW-kw)/2;
-    const centers=[];
-    node.kids.forEach(k=>{ placeTree2(k,cx,depth+1,out); centers.push(k._cx); cx+=k.subtreeW+H_GAP; });
-    centerX=(centers[0]+centers[centers.length-1])/2;
-  } else centerX=x+node.subtreeW/2;
-  const coupleLeft=centerX-node.coupleW/2;
-  const mainX=coupleLeft+BOX_W/2;
-  node._cx=mainX;
-  out.nodes.push({pid:node.pid,x:mainX,y,blood:true,order:node.order});
-  if(node.spouse){
-    const spX=coupleLeft+BOX_W+COUPLE_GAP+BOX_W/2;
-    out.nodes.push({pid:node.spouse,x:spX,y,blood:false});
-    out.marriages.push({x1:mainX,x2:spX,y:y});
-  }
-  if(node.kids.length){
-    const parentX=node.spouse?(mainX + (coupleLeft+BOX_W+COUPLE_GAP+BOX_W/2))/2:mainX;
-    const py=y+BOX_H/2;
-    node.kids.forEach(k=>{ out.links.push({x1:parentX,y1:py,x2:k._cx,y2:(depth+1)*(BOX_H+V_GAP)-BOX_H/2}); });
+  const unions=node.unions;
+  const withKids=unions.filter(u=>u.kids.length);
+  let childrenTotal=withKids.reduce((s,u)=>s+u.childrenW,0);
+  if(withKids.length>1) childrenTotal+=H_GAP*(withKids.length-1);
+  // letakkan blok anak (per pernikahan) berderet, terpusat dalam subtree
+  let cursor=x+(node.subtreeW-childrenTotal)/2;
+  unions.forEach(u=>{
+    if(u.kids.length){
+      let kx=cursor; const centers=[];
+      u.kids.forEach(k=>{ placeTree2(k,kx,depth+1,out); centers.push(k._cx); kx+=k.subtreeW+H_GAP; });
+      u._kidsCenter=(centers[0]+centers[centers.length-1])/2;
+      cursor+=u.childrenW+H_GAP;
+    } else u._kidsCenter=null;
+  });
+  const py=y+BOX_H/2, childTop=(depth+1)*(BOX_H+V_GAP)-BOX_H/2;
+  let mainX;
+  if(unions.length<=1){
+    // kasus umum: pasangan tunggal terpusat di atas anak-anaknya (tampilan klasik)
+    const u=unions[0];
+    const spouse=u&&u.spouseId;
+    const coupleW=BOX_W+(spouse?COUPLE_GAP+BOX_W:0);
+    const center=(u&&u.kids.length)?u._kidsCenter:(x+node.subtreeW/2);
+    const coupleLeft=center-coupleW/2;
+    mainX=coupleLeft+BOX_W/2; node._cx=mainX;
+    out.nodes.push({pid:node.pid,x:mainX,y,blood:true,order:node.order});
+    if(spouse){
+      const spX=coupleLeft+BOX_W+COUPLE_GAP+BOX_W/2;
+      out.nodes.push({pid:spouse,x:spX,y,blood:false});
+      out.marriages.push({x1:mainX,x2:spX,y,divorced:u.divorced});
+    }
+    if(u&&u.kids.length){
+      const parentX=spouse?(mainX+(coupleLeft+BOX_W+COUPLE_GAP+BOX_W/2))/2:mainX;
+      u.kids.forEach(k=>out.links.push({x1:parentX,y1:py,x2:k._cx,y2:childTop}));
+    }
+  } else {
+    // banyak pernikahan (mis. cerai lalu menikah lagi): orang ini di kiri, tiap pasangan di atas anaknya
+    mainX=x+BOX_W/2; node._cx=mainX;
+    out.nodes.push({pid:node.pid,x:mainX,y,blood:true,order:node.order});
+    let lastX=mainX;
+    unions.forEach(u=>{
+      let spX=u.kids.length?u._kidsCenter:(lastX+COUPLE_GAP+BOX_W);
+      if(spX<lastX+COUPLE_GAP+BOX_W) spX=lastX+COUPLE_GAP+BOX_W;
+      lastX=spX;
+      if(u.spouseId){
+        out.nodes.push({pid:u.spouseId,x:spX,y,blood:false});
+        out.marriages.push({x1:mainX,x2:spX,y,divorced:u.divorced});
+      }
+      if(u.kids.length){
+        const originX=u.spouseId?spX:mainX;
+        u.kids.forEach(k=>out.links.push({x1:originX,y1:py,x2:k._cx,y2:childTop}));
+      }
+    });
   }
 }
 // --- tata letak LELUHUR (ke atas dari fokus) ---
@@ -429,7 +515,7 @@ function renderTree(){
     const mid=(l.y1+l.y2)/2;
     html+=`<path class="link" d="M${l.x1},${l.y1} C${l.x1},${mid} ${l.x2},${mid} ${l.x2},${l.y2}"/>`;
   });
-  out.marriages.forEach(m=>{ html+=`<line class="marriage" x1="${m.x1}" y1="${m.y}" x2="${m.x2}" y2="${m.y}"/>`; });
+  out.marriages.forEach(m=>{ html+=`<line class="marriage ${m.divorced?'divorced':''}" x1="${m.x1}" y1="${m.y}" x2="${m.x2}" y2="${m.y}"/>`; });
   nodePos={};
   out.nodes.forEach(n=>{
     const p=P(n.pid); if(!p) return;
@@ -459,10 +545,27 @@ function renderTree(){
 }
 
 /* ---------- root select ---------- */
+// "Pusatkan di" = kotak pencarian (bukan dropdown panjang)
 function renderRootSelect(){
-  const s=document.getElementById('rootSelect');
-  s.innerHTML=state.people.map(p=>`<option value="${p.id}" ${p.id===rootId?'selected':''}>${esc(p.namaLengkap||'(tanpa nama)')}</option>`).join('');
-  s.onchange=()=>{ rootId=s.value; renderTree(); fit(); };
+  const inp=document.getElementById('focusSearch');
+  const cur=P(rootId);
+  if(inp && document.activeElement!==inp) inp.value = cur ? (cur.namaLengkap||'(tanpa nama)') : '';
+}
+function drawFocusList(){
+  const inp=document.getElementById('focusSearch'), list=document.getElementById('focusList');
+  const q=(inp.value||'').toLowerCase();
+  const items=state.people
+    .filter(p=>!q || (p.namaLengkap+' '+(p.namaPanggilan||'')).toLowerCase().includes(q))
+    .sort((a,b)=>(a.namaLengkap||'').localeCompare(b.namaLengkap||'')).slice(0,60);
+  list.innerHTML = items.map(p=>`<div class="fitem" data-id="${p.id}">${avatarHTML(p)}<span>${esc(p.namaLengkap||'(tanpa nama)')}${p.namaPanggilan?' · '+esc(p.namaPanggilan):''}</span></div>`).join('') || '<div class="fitem">Tidak ada nama cocok</div>';
+  list.classList.add('show');
+  list.querySelectorAll('.fitem[data-id]').forEach(el=>el.onmousedown=e=>{ e.preventDefault(); setFocus(el.dataset.id); document.getElementById('focusList').classList.remove('show'); el.dataset.id; });
+}
+function setupFocusSearch(){
+  const inp=document.getElementById('focusSearch'), list=document.getElementById('focusList');
+  inp.addEventListener('focus',()=>{ inp.value=''; drawFocusList(); });
+  inp.addEventListener('input',drawFocusList);
+  inp.addEventListener('blur',()=>setTimeout(()=>{ list.classList.remove('show'); renderRootSelect(); },150));
 }
 
 /* ============ PAN / ZOOM ============ */
@@ -638,25 +741,33 @@ function personFormReturning(cb){
 /* ============ HELPERS ============ */
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function trim(s,n){ s=s||''; return s.length>n?s.slice(0,n-1)+'…':s; }
-function select(id){ selectedId=id; renderList(); renderDetail(); renderTree(); }
+function select(id){
+  selectedId=id; renderList(); renderDetail(); renderTree();
+  if(isMobile()) document.getElementById('detail').classList.add('open');  // buka panel detail di HP
+  document.getElementById('sidebar').classList.remove('open');             // tutup daftar setelah memilih
+  updateBackdrop();
+}
 function refresh(){ renderList(); renderDetail(); renderRootSelect(); renderTree(); }
 
-/* ============ TOOLBAR ============ */
+/* ============ TOOLBAR & DRAWER ============ */
+function isMobile(){ return window.matchMedia('(max-width:760px)').matches; }
+function updateBackdrop(){
+  const sb=document.getElementById('sidebar'), dt=document.getElementById('detail');
+  const any=sb.classList.contains('open')||(isMobile()&&dt.classList.contains('open'));
+  document.getElementById('backdrop').classList.toggle('show',any);
+}
+document.getElementById('btnMenu').onclick=()=>{ const sb=document.getElementById('sidebar'); sb.classList.toggle('open'); updateBackdrop(); };
+document.getElementById('backdrop').onclick=()=>{ document.getElementById('sidebar').classList.remove('open'); document.getElementById('detail').classList.remove('open'); updateBackdrop(); };
+document.getElementById('detailClose').onclick=()=>{ document.getElementById('detail').classList.remove('open'); updateBackdrop(); };
 document.getElementById('btnAdd').onclick=()=>personForm(null);
 document.getElementById('searchBox').oninput=renderList;
 document.getElementById('btnExport').onclick=()=>{
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='silsilah-keluarga.json'; a.click();
-};
-document.getElementById('btnImport').onclick=()=>document.getElementById('fileInput').click();
-document.getElementById('fileInput').onchange=e=>{
-  const f=e.target.files[0]; if(!f)return; const r=new FileReader();
-  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(d.people&&d.unions){ state=d; repairUnions(); save(); selectedId=null; rootId=null; refresh(); fit(); toast('Data berhasil diimpor'); } else toast('Format file tidak dikenali.','error'); }catch(err){ toast('Gagal membaca file.','error'); } };
-  r.readAsText(f); e.target.value='';
+  a.download='happy-family.json'; a.click();
 };
 document.getElementById('btnReset').onclick=()=>confirmDialog('Kosongkan SEMUA data? Tindakan ini tidak bisa dibatalkan.',()=>{ state={people:[],unions:[]}; selectedId=null; rootId=null; save(); refresh(); toast('Data dikosongkan'); },'Kosongkan',true);
-document.getElementById('btnSample').onclick=()=>{ if(state.people.length) confirmDialog('Ganti data sekarang dengan contoh?',loadSample,'Ganti'); else loadSample(); };
+setupFocusSearch();
 
 /* ============ SAMPLE DATA ============ */
 function loadSample(){
@@ -683,7 +794,7 @@ function loadSample(){
 /* ============ GOOGLE DRIVE SYNC ============ */
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILENAME='silsilah-keluarga.json';
-let CLIENT_ID=localStorage.getItem('g_client_id')||'';
+let CLIENT_ID=localStorage.getItem('g_client_id')||'1078509892418-saoqsvkc6omioqh098m3c4a18h2d8gng.apps.googleusercontent.com';
 let tokenClient=null, accessToken=null, tokenExpiry=0;
 let driveFileId=localStorage.getItem('drive_file_id')||null;
 let driveConnected=false, pushTimer=null;
@@ -785,7 +896,8 @@ function driveModal(){
 function bootDrive(){
   setStatus('off'); updateDriveBtn();
   document.getElementById('btnDrive').onclick=driveModal;
-  if(CLIENT_ID){ let tries=0; const t=()=>{ if(initToken()){ connectDrive(false); } else if(tries++<25){ setTimeout(t,400); } }; t(); }
+  // auto-sambung hanya bila pernah tersambung sebelumnya (punya file id) -> hindari popup saat pertama buka
+  if(CLIENT_ID && driveFileId){ let tries=0; const t=()=>{ if(initToken()){ connectDrive(false); } else if(tries++<25){ setTimeout(t,400); } }; t(); }
 }
 
 /* ============ INIT ============ */
