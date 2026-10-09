@@ -1265,7 +1265,7 @@ function bootDrive(){
    ikut muncul. Bila dua orang mengubah bersamaan, perubahan keduanya digabung (per orang/keluarga).
    Bila FAMILY_API kosong, aplikasi memakai mode lama (Hubungkan Drive).
 */
-const DEFAULT_FAMILY_API = '';                   // URL web app Apps Script (…/exec), diisi setelah server dipasang
+const DEFAULT_FAMILY_API = 'https://script.google.com/macros/s/AKfycbygajCuVXpw3TONzUA6HE-7bm2gafz-dUdRrt41ay9dwAU-XVpuwfPKCw6aH0J1zuiQ/exec';                   // URL web app Apps Script (…/exec), diisi setelah server dipasang
 const FAMILY_API = lsGet('family_api') || DEFAULT_FAMILY_API;
 const fam={code:null,rev:null,base:null,ready:false,busy:false,dirty:false,timer:null,lastSync:null,warned:false};
 const clone=x=>JSON.parse(JSON.stringify(x));
