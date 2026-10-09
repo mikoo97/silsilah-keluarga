@@ -144,6 +144,8 @@
     <span id="driveStatus" class="drivestatus off">● Lokal saja</span>
     <button class="btn" id="btnDrive">☁ Hubungkan Drive</button>
     <button class="btn" id="btnExport" title="Cadangkan ke file">⬇ Ekspor</button>
+    <button class="btn" id="btnImport" title="Muat data dari file cadangan">⬆ Impor</button>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none">
     <button class="btn danger" id="btnReset">Kosongkan</button>
   </header>
   <div class="main">
@@ -765,6 +767,20 @@ document.getElementById('btnExport').onclick=()=>{
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='happy-family.json'; a.click();
+};
+// impor file cadangan (hasil Ekspor) -> ganti seluruh data, lalu ikut tersimpan ke Drive bila tersambung
+document.getElementById('btnImport').onclick=()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange=e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    let d; try{ d=JSON.parse(rd.result); }catch(err){ toast('File bukan JSON yang valid','error'); return; }
+    if(!d || !Array.isArray(d.people) || !Array.isArray(d.unions)){ toast('Format file tidak dikenali','error'); return; }
+    confirmDialog('Ganti SEMUA data dengan isi file "'+f.name+'" ('+d.people.length+' orang)? Data sekarang akan tertimpa.',()=>{
+      state=d; repairUnions(); selectedId=null; rootId=null; save(); refresh(); fit(); toast('Data berhasil diimpor');
+    },'Impor',true);
+  };
+  rd.readAsText(f);
 };
 document.getElementById('btnReset').onclick=()=>confirmDialog('Kosongkan SEMUA data? Tindakan ini tidak bisa dibatalkan.',()=>{ state={people:[],unions:[]}; selectedId=null; rootId=null; save(); refresh(); toast('Data dikosongkan'); },'Kosongkan',true);
 setupFocusSearch();
