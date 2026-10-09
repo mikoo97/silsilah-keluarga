@@ -1447,7 +1447,7 @@ function wzRender(){
       <div class="big-seg wrap grid2" id="lType">
         <button type="button" data-v="anak">${ic('arrow-up')} Anak dari…</button>
         <button type="button" data-v="pasangan">${ic('heart')} Suami/istri dari…</button>
-        <button type="button" data-v="ortubaru">${ic('plus')} Orang tuanya belum ada</button>
+        <button type="button" data-v="ortubaru">${ic('plus')} Orang tua belum diinput</button>
         <button type="button" data-v="nanti">${ic('chevron-right')} Hubungkan nanti</button>
       </div></div><div id="lBox"></div>`;
     bindSeg(body);
@@ -1494,7 +1494,7 @@ function wzRender(){
     footer(()=>wzGo('who'),'Simpan & lanjut '+ic('chevron-right'),()=>{
       const d=readPerson(body,'n_'); if(!validPerson(body,'n_',d)) return;
       const L=wz.link;
-      if((L.type==='anak'||L.type==='pasangan') && !L.id){ toast(L.type==='anak'?'Pilih ayah/ibunya, atau pilih "Orang tuanya belum ada"':'Pilih suami/istrinya dulu','error'); box.querySelector('.lq')?.focus(); return; }
+      if((L.type==='anak'||L.type==='pasangan') && !L.id){ toast(L.type==='anak'?'Pilih ayah/ibunya, atau pilih "Orang tua belum diinput"':'Pilih suami/istrinya dulu','error'); box.querySelector('.lq')?.focus(); return; }
       let fa=null, mo=null;
       if(L.type==='ortubaru'){
         const fn=(box.querySelector('#fa_nl').value||'').trim(), mn=(box.querySelector('#fi_nl').value||'').trim();
