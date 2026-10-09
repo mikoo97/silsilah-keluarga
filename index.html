@@ -1190,6 +1190,7 @@ async function driveUpdate(id,content){
   await driveReq('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(content)});
 }
 function schedulePush(){
+  if(FAMILY_API){ famSchedule(); return; }
   if(!driveConnected||!driveFileId) return;
   setStatus('saving'); clearTimeout(pushTimer);
   pushTimer=setTimeout(async()=>{ try{ await driveUpdate(driveFileId,state); setStatus('saved'); }catch(e){ console.error(e); setStatus('error'); } },1200);
@@ -1225,7 +1226,9 @@ function chooseConflict(){
 }
 function setStatus(s){
   const el=document.getElementById('driveStatus'); if(!el) return;
-  const map={off:['off','● Lokal saja'],saving:['saving','⟳ Menyimpan…'],saved:['saved','✓ Tersimpan di Drive'],error:['error','⚠ Gagal menyimpan']};
+  const map=FAMILY_API
+    ? {off:['off','● Belum tersambung'],saving:['saving','⟳ Menyinkronkan…'],saved:['saved','✓ Tersinkron'],error:['error','⚠ Gagal sinkron']}
+    : {off:['off','● Lokal saja'],saving:['saving','⟳ Menyimpan…'],saved:['saved','✓ Tersimpan di Drive'],error:['error','⚠ Gagal menyimpan']};
   const v=map[s]||map.off; el.className='drivestatus '+v[0];
   el.innerHTML='<b>'+v[1].slice(0,1)+'</b><span class="stx">'+v[1].slice(2)+'</span>';
 }
@@ -1256,11 +1259,157 @@ function bootDrive(){
   if(CLIENT_ID && driveFileId){ let tries=0; const t=()=>{ if(initToken()){ connectDrive(false); } else if(tries++<25){ setTimeout(t,400); } }; t(); }
 }
 
+/* ============ SERVER KELUARGA (Apps Script) ============
+   Bila FAMILY_API diisi: tanpa login Google. Anggota cukup memasukkan kode keluarga sekali
+   per perangkat; data dimuat dari server, perubahan tersimpan otomatis & perubahan orang lain
+   ikut muncul. Bila dua orang mengubah bersamaan, perubahan keduanya digabung (per orang/keluarga).
+   Bila FAMILY_API kosong, aplikasi memakai mode lama (Hubungkan Drive).
+*/
+const DEFAULT_FAMILY_API = '';                   // URL web app Apps Script (…/exec), diisi setelah server dipasang
+const FAMILY_API = lsGet('family_api') || DEFAULT_FAMILY_API;
+const fam={code:null,rev:null,base:null,ready:false,busy:false,dirty:false,timer:null,lastSync:null,warned:false};
+const clone=x=>JSON.parse(JSON.stringify(x));
+async function famApi(action,payload){
+  const res=await fetch(FAMILY_API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(Object.assign({action,code:fam.code},payload))});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return res.json();
+}
+// gabung 3 arah per id: base = versi terakhir yg sama-sama diketahui, mine = punyaku, theirs = di server
+function mergeList(b,m,t){
+  const key=x=>JSON.stringify(x);
+  const B=new Map((b||[]).map(x=>[x.id,x])), M=new Map((m||[]).map(x=>[x.id,x])), T=new Map((t||[]).map(x=>[x.id,x]));
+  const res=[], seen=new Set();
+  [...T.keys(),...M.keys()].forEach(id=>{
+    if(seen.has(id)) return; seen.add(id);
+    const bx=B.get(id), mx=M.get(id), tx=T.get(id);
+    let pick;
+    if(!bx) pick=mx||tx;                                   // baru ditambahkan (di salah satu sisi)
+    else if(mx && key(mx)===key(bx)) pick=tx;             // aku tidak mengubah -> ikut server (termasuk bila dihapus)
+    else pick=mx;                                         // aku mengubah / menghapus -> pakai punyaku
+    if(pick) res.push(clone(pick));
+  });
+  return res;
+}
+function mergeStates(base,mine,theirs){
+  const out={people:mergeList(base.people,mine.people,theirs.people), unions:mergeList(base.unions,mine.unions,theirs.unions)};
+  const bs=JSON.stringify(base.settings||null), ms=JSON.stringify(mine.settings||null);
+  const st=ms!==bs ? mine.settings : theirs.settings; if(st) out.settings=clone(st);
+  const ids=new Set(out.people.map(p=>p.id));             // buang rujukan ke orang yg sudah tak ada
+  out.unions.forEach(u=>{ u.partners=u.partners.filter(id=>ids.has(id)); u.children=u.children.filter(id=>ids.has(id)); });
+  out.unions=out.unions.filter(u=>u.partners.length>0||u.children.length>0);
+  return out;
+}
+function applyRemote(data,rev,initial){
+  fam.rev=rev; fam.base=clone(data); fam.ready=true; fam.lastSync=new Date();
+  state=clone(data); repairUnions();
+  localStorage.setItem('silsilah-data',JSON.stringify(state));
+  if(initial){ rootId=null; autoRoot=null; refresh(); fit(); } else refresh();
+  setStatus('saved');
+}
+async function famLoad(initial){
+  const r=await famApi('load',{known:initial?null:fam.rev});
+  if(!r.ok){ if(r.error==='wrong_code'){ famGate(true); return; } throw new Error(r.error); }
+  fam.lastSync=new Date();
+  if(r.unchanged){ setStatus('saved'); return; }
+  if(fam.dirty||fam.busy) return;                         // ada perubahanku yg belum terkirim -> digabung saat menyimpan
+  applyRemote(r.data,r.rev,initial);
+}
+function famSchedule(){
+  if(!fam.ready){ if(!fam.warned){ fam.warned=true; toast('Belum tersambung ke server keluarga — perubahan ini belum tersimpan.','error'); } setStatus('error'); return; }
+  fam.dirty=true; setStatus('saving');
+  clearTimeout(fam.timer); fam.timer=setTimeout(famPush,1200);
+}
+async function famPush(){
+  if(fam.busy||!fam.dirty) return;
+  fam.busy=true; fam.dirty=false; setStatus('saving');
+  const sending=clone(state); let retry=300;
+  try{
+    const r=await famApi('save',{rev:fam.rev,data:sending});
+    if(r.ok){ fam.base=sending; fam.rev=r.rev; fam.lastSync=new Date(); }
+    else if(r.error==='conflict'){
+      // orang lain menyimpan duluan: gabungkan lalu kirim ulang
+      state=mergeStates(fam.base||{people:[],unions:[]}, state, r.data);
+      fam.base=clone(r.data); fam.rev=r.rev; fam.dirty=true;
+      localStorage.setItem('silsilah-data',JSON.stringify(state)); refresh();
+    }
+    else if(r.error==='wrong_code'){ famGate(true); return; }
+    else if(r.error==='too_many_deletes'){
+      toast('Server menolak: terlalu banyak orang terhapus sekaligus. Data dikembalikan.','error');
+      fam.dirty=false; const l=await famApi('load',{}); if(l.ok) applyRemote(l.data,l.rev,false); return;
+    }
+    else throw new Error(r.message||r.error);
+  }catch(e){ console.error(e); fam.dirty=true; retry=15000; setStatus('error'); }
+  finally{
+    fam.busy=false;
+    if(fam.dirty){ clearTimeout(fam.timer); fam.timer=setTimeout(famPush,retry); }
+    else setStatus('saved');
+  }
+}
+// layar kode keluarga
+function famGate(wrong){
+  fam.ready=false; clearTimeout(fam.timer);
+  if(wrong){ fam.code=null; lsSet('family_code',null); }
+  state={people:[],unions:[]}; localStorage.removeItem('silsilah-data'); selectedId=null; rootId=null; refresh();
+  setStatus('off');
+  document.querySelectorAll('.famgate').forEach(x=>x.remove());
+  const g=document.createElement('div'); g.className='overlay famgate';
+  g.innerHTML=`<div class="modal" style="width:380px"><div class="mbody" style="text-align:center;padding:26px 22px">
+    <div style="font-size:44px">🌳</div><h2 style="margin:6px 0 4px;font-size:20px">Happy Family</h2>
+    <div class="hint" style="font-size:13px;line-height:1.5">Masukkan <b>kode keluarga</b> untuk membuka silsilah.<br>Kodenya bisa ditanyakan di grup keluarga.</div>
+    <input id="fg_code" class="search" style="font-size:16px;text-align:center;margin:12px 0 8px;padding:11px" placeholder="Kode keluarga" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div id="fg_err" style="color:var(--danger);font-size:12.5px;min-height:18px">${wrong?'Kode salah atau sudah diganti. Coba lagi.':''}</div>
+    <button class="btn primary" id="fg_go" style="width:100%;justify-content:center;padding:11px;font-size:15px">Buka silsilah</button>
+  </div></div>`;
+  document.body.appendChild(g);
+  const inp=g.querySelector('#fg_code'), err=g.querySelector('#fg_err'), go=g.querySelector('#fg_go');
+  const submit=async()=>{
+    const c=inp.value.trim(); if(!c){ inp.focus(); return; }
+    go.disabled=true; go.textContent='Memeriksa…'; err.textContent='';
+    fam.code=c;
+    try{
+      const r=await famApi('load',{});
+      if(!r.ok){ err.textContent=r.error==='wrong_code'?'Kode salah. Coba lagi.':'Server bermasalah: '+r.error; fam.code=null; }
+      else { lsSet('family_code',c); g.remove(); applyRemote(r.data,r.rev,true); startFamPolling(); }
+    }catch(e){ err.textContent='Tidak bisa terhubung ke server. Periksa internet lalu coba lagi.'; fam.code=null; }
+    go.disabled=false; go.textContent='Buka silsilah';
+  };
+  go.onclick=submit; inp.onkeydown=e=>{ if(e.key==='Enter') submit(); };
+  setTimeout(()=>inp.focus(),50);
+}
+let famPoll=null;
+function startFamPolling(){
+  if(famPoll) return;
+  const tick=()=>{ if(document.hidden||!fam.code||fam.busy||fam.dirty||document.querySelector('.famgate')) return; famLoad(!fam.ready).catch(()=>setStatus('error')); };
+  famPoll=setInterval(tick,30000);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) tick(); });
+}
+function famInfo(){
+  const t=fam.lastSync?fam.lastSync.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'-';
+  const o=modal(`<h3>Sinkron keluarga</h3><div class="mbody" style="font-size:13.5px;line-height:1.55">
+    Data tersimpan di server keluarga dan otomatis tersinkron ke semua perangkat — tidak perlu login.<br><br>
+    Terakhir sinkron: <b>${esc(t)}</b>${fam.dirty||fam.busy?'<br><span style="color:#854d0e">Ada perubahan yang sedang dikirim…</span>':''}
+    </div><div class="mfoot"><button class="btn danger" id="fi_out">Lupakan kode di perangkat ini</button><button class="btn" id="fi_close">Tutup</button><button class="btn primary" id="fi_sync">Sinkron sekarang</button></div>`);
+  o.querySelector('#fi_close').onclick=()=>o.remove();
+  o.querySelector('#fi_sync').onclick=()=>{ o.remove(); setStatus('saving'); (fam.dirty?famPush():famLoad(!fam.ready)).catch(()=>setStatus('error')); };
+  o.querySelector('#fi_out').onclick=()=>{ o.remove(); confirmDialog('Lupakan kode keluarga di perangkat ini? Kamu perlu memasukkan kodenya lagi untuk membuka silsilah.',()=>famGate(false),'Lupakan',true); };
+}
+function bootFamily(){
+  ['btnDrive','btnReset'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  document.getElementById('driveStatus').onclick=famInfo;
+  window.addEventListener('beforeunload',e=>{ if(fam.dirty||fam.busy){ e.preventDefault(); e.returnValue=''; } });
+  fam.code=lsGet('family_code');
+  if(!fam.code){ famGate(false); return; }
+  setStatus('saving');                                  // tampilkan data terakhir di perangkat dulu, lalu muat dari server
+  famLoad(true).catch(()=>{ setStatus('error'); toast('Server keluarga tidak terjangkau — menampilkan data terakhir di perangkat ini.','error'); });
+  startFamPolling();
+}
+
 /* ============ INIT ============ */
-repairUnions(); save();
+repairUnions(); localStorage.setItem('silsilah-data', JSON.stringify(state));
 refresh();
 setTimeout(fit,100);
-bootDrive();
+if(FAMILY_API) bootFamily(); else bootDrive();
 </script>
 </body>
 </html>
