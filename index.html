@@ -194,6 +194,7 @@
   .wf .bad,.big-seg.bad{border-color:var(--danger)!important;box-shadow:0 0 0 3px #fee2e2;border-radius:12px}
   .big-seg{display:flex;gap:8px}
   .big-seg.wrap{flex-wrap:wrap}
+  .big-seg.grid2 button{flex:1 1 calc(50% - 4px);font-size:14.5px;padding:12px 8px}
   .big-seg button{flex:1;padding:13px 10px;font-size:15.5px;border:1.5px solid var(--line);background:#fff;border-radius:12px;cursor:pointer;font-family:inherit;color:var(--text)}
   .big-seg button.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
   .choice{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;margin:8px 0;text-align:left;font-size:15px;cursor:pointer;font-family:inherit;color:var(--text)}
@@ -216,6 +217,13 @@
   .kidrow .ctxt{flex:1;min-width:0;display:flex;flex-direction:column;font-size:14.5px}
   .kidrow .ctx{font-size:12px;color:var(--muted)}
   .kidrow .ord{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .menu .cnt{margin-left:auto;background:#fee2e2;color:#b91c1c;border-radius:20px;padding:1px 8px;font-size:12px;font-weight:700}
+  #btnUnlinked{color:#b45309}
+  .ulgroup{border:1px solid #fed7aa;background:#fffbf5;border-radius:12px;padding:8px 10px;margin:10px 0}
+  .ulname{display:flex;gap:10px;align-items:center;padding:5px 0;font-size:13.5px}
+  .ulname .av{width:30px;height:30px;font-size:12px}
+  .ulname .ctx{font-size:12px;color:var(--muted)}
+  .ulact{display:flex;gap:8px;margin-top:6px}
   .kbtn{width:40px;height:40px;justify-content:center;font-size:16px;padding:0}
   /* ===== MOBILE ===== */
   @media (max-width:760px){
@@ -302,6 +310,7 @@
         <button id="btnHomeMenu"><svg class="ic" aria-hidden="true"><use href="#i-house"/></svg> Ke tampilan awal</button>
         <button id="btnMe"><svg class="ic" aria-hidden="true"><use href="#i-user-round"/></svg> Pilih "Saya"</button>
         <button id="btnWizard2"><svg class="ic" aria-hidden="true"><use href="#i-pencil-line"/></svg> Isi data keluarga</button>
+        <button id="btnUnlinked" style="display:none"></button>
         <button id="btnInvite"><svg class="ic" aria-hidden="true"><use href="#i-qr-code"/></svg> Undangan (link & QR)</button>
         <button id="btnFont"><svg class="ic" aria-hidden="true"><use href="#i-a-large-small"/></svg> Huruf besar</button>
         <hr>
@@ -1201,7 +1210,7 @@ function select(id){
   document.getElementById('sidebar').classList.remove('open');             // tutup daftar setelah memilih
   updateBackdrop();
 }
-function refresh(){ renderList(); renderDetail(); renderRootSelect(); renderTree(); renderOutline(); }
+function refresh(){ renderList(); renderDetail(); renderRootSelect(); renderTree(); renderOutline(); if(typeof updateUnlinkedMenu==='function') updateUnlinkedMenu(); }
 
 /* ============ TOOLBAR, MENU & DRAWER ============ */
 function isMobile(){ return window.matchMedia('(max-width:760px)').matches; }
@@ -1252,6 +1261,7 @@ document.getElementById('btnReset').onclick=()=>confirmDialog('Kosongkan SEMUA d
 document.getElementById('btnWizard').onclick=()=>openWizard();
 document.getElementById('btnWizard2').onclick=()=>openWizard();
 document.getElementById('btnInvite').onclick=inviteModal;
+document.getElementById('btnUnlinked').onclick=unlinkedModal;
 setupFocusSearch();
 applyFont();
 
@@ -1314,20 +1324,73 @@ function validPerson(root,pre,d){
   if(d.tahunLahir && (d.tahunLahir<1850 || d.tahunLahir>new Date().getFullYear())) return bad('th','Tahun lahir tidak masuk akal');
   return true;
 }
+// calon duplikat: semua kata cocok, atau nama depan cocok dengan nama depan/panggilan (nama belakang sama saja tidak cukup)
+function similarPeople(q,exclude=[]){
+  const toks=normName(q).split(' ').filter(Boolean); if(!toks.length) return [];
+  const first=toks[0];
+  const score=p=>{
+    const nl=normName(p.namaLengkap), np=normName(p.namaPanggilan), words=(nl+' '+np).split(' ').filter(Boolean);
+    if(toks.every(t=>words.some(w=>w.startsWith(t)))) return 2;
+    return first.length>=3 && ((nl.split(' ')[0]||'').startsWith(first) || (np&&np.split(' ')[0].startsWith(first)) || first.startsWith(nl.split(' ')[0]||'#')) ? 1 : 0;
+  };
+  return state.people.filter(p=>!exclude.includes(p.id)).map(p=>[p,score(p)]).filter(x=>x[1]).sort((x,y)=>y[1]-x[1]).slice(0,4).map(x=>x[0]);
+}
 // saran "mungkin sudah ada" saat mengetik nama, supaya tidak dobel
 function bindSimilar(root,pre,exclude,onPick,pickLabel){
   const inp=root.querySelector('#'+pre+'nl'), box=root.querySelector('#'+pre+'sim');
   const draw=()=>{
     const q=inp.value; if(normName(q).length<3){ box.innerHTML=''; return; }
-    const res=searchPeople(q,exclude).slice(0,4);
+    const res=similarPeople(q,exclude);
     box.innerHTML=res.length?`<div class="simbox"><div class="simt">${ic('triangle-alert')} Mungkin orangnya sudah ada di daftar?</div>${res.map(p=>choiceHTML(p,`data-pick="${p.id}"`,`<span class="pickbtn">${esc(pickLabel)}</span>`)).join('')}</div>`:'';
     box.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>onPick(b.dataset.pick));
   };
   inp.addEventListener('input',draw); draw();
 }
-function openWizard(startPid){
+// orang-orang yg tersambung (lewat orang tua/anak/pasangan) ke tampilan awal
+function mainComponent(){
+  const start=homeId()||pickDefaultRoot(); const seen=new Set(); if(!start) return seen;
+  const st=[start];
+  while(st.length){ const x=st.pop(); if(seen.has(x)) continue; seen.add(x);
+    [...parentsOf(x),...childrenOf(x),...spousesOf(x)].forEach(y=>{ if(!seen.has(y)) st.push(y); }); }
+  return seen;
+}
+function isConnected(id){ return mainComponent().has(id); }
+// kelompok orang yg belum tersambung; tiap kelompok diwakili orang paling atas
+function unlinkedGroups(){
+  const main=mainComponent(), done=new Set(), groups=[];
+  state.people.forEach(p=>{
+    if(main.has(p.id)||done.has(p.id)) return;
+    const g=[], st=[p.id];
+    while(st.length){ const x=st.pop(); if(done.has(x)) continue; done.add(x); g.push(x);
+      [...parentsOf(x),...childrenOf(x),...spousesOf(x)].forEach(y=>{ if(!done.has(y)) st.push(y); }); }
+    const top=g.find(x=>!parentsOf(x).length)||g[0];
+    groups.push({top,ids:g});
+  });
+  return groups;
+}
+function updateUnlinkedMenu(){
+  const b=document.getElementById('btnUnlinked'); if(!b) return;
+  const n=unlinkedGroups().reduce((s,g)=>s+g.ids.length,0);
+  b.style.display=n?'':'none';
+  b.innerHTML=ic('triangle-alert')+' Belum terhubung <span class="cnt">'+n+'</span>';
+}
+function unlinkedModal(){
+  const gs=unlinkedGroups();
+  const o=modal(`<h3>Belum terhubung ke pohon</h3><div class="mbody">
+    <div class="hint" style="font-size:13px">Orang-orang ini sudah tercatat, tapi belum tersambung ke keluarga besar. Sambungkan dengan menambahkan orang tua (atau pasangan) yang sudah ada di daftar.</div>
+    ${gs.length?gs.map(g=>`<div class="ulgroup">${g.ids.map(id=>`<div class="ulname">${avatarHTML(P(id))}<span><b>${esc(fullName(id))}</b><br><span class="ctx">${esc(personCtx(id))}</span></span></div>`).join('')}
+      <div class="ulact"><button class="btn primary sm" data-ulw="${g.top}">${ic('arrow-up')} Sambungkan ${esc(nick(g.top))}</button><button class="btn sm" data-ulv="${g.top}">Lihat</button></div></div>`).join('')
+      :'<div class="wnote small">Semua orang sudah tersambung ke pohon.</div>'}
+    </div><div class="mfoot"><button class="btn" id="ul_close">Tutup</button></div>`);
+  o.querySelector('#ul_close').onclick=()=>o.remove();
+  o.querySelectorAll('[data-ulw]').forEach(b=>b.onclick=()=>{ o.remove(); openWizard(b.dataset.ulw,'ortu'); });
+  o.querySelectorAll('[data-ulv]').forEach(b=>b.onclick=()=>{ o.remove(); setFocus(b.dataset.ulv); });
+}
+function openWizard(startPid,startStep){
   document.querySelectorAll('.wiz').forEach(x=>x.remove());
-  wz={pid:startPid&&P(startPid)?startPid:null, step:startPid&&P(startPid)?'profil':'who', mode:'self', union:null};
+  const ok=startPid&&P(startPid);
+  wz={pid:ok?startPid:null, step:ok?(startStep||'profil'):'who', mode:'other', union:null};
+  if(!ok) wz.mode='self';
   const o=document.createElement('div'); o.className='wiz';
   o.innerHTML=`<div class="wizbox"><div class="wizhead"><h3 id="wzTitle"></h3><span id="wzSync" class="wzsync"></span><button class="btn iconbtn" id="wzClose" title="Tutup">${ic('x')}</button></div>
     <div class="wizsteps" id="wzSteps"></div><div class="wizbody" id="wzBody"></div><div class="wizfoot" id="wzFoot"></div>${domisiliOptions()}</div>`;
@@ -1377,29 +1440,80 @@ function wzRender(){
   /* --- orang baru + dihubungkan ke keluarga --- */
   if(s==='baru'){
     title.textContent='Tambah orang baru';
-    wz.link=wz.link||{type:'anak',id:null};
+    wz.link=wz.link||{type:'anak',id:null,gp:null,side:'ayah'};
     body.innerHTML=personFieldsHTML('n_',{namaLengkap:wz.newName||''})+`
-      <div class="wf"><label>Hubungkan ke keluarga *</label>
-      <div class="hint" style="margin:0 0 8px">Supaya muncul di pohon, pilih salah satu orang tua ATAU pasangannya.</div>
-      <div class="big-seg" id="lType"><button type="button" data-v="anak" class="${wz.link.type==='anak'?'on':''}">Anak dari…</button><button type="button" data-v="pasangan" class="${wz.link.type==='pasangan'?'on':''}">Suami/istri dari…</button></div>
-      <input id="lQ" placeholder="Cari nama ayah/ibu atau pasangannya…" autocomplete="off" style="margin-top:10px"></div>
-      <div id="lSel"></div><div id="lRes"></div>`;
+      <div class="wf"><label>Hubungkan ke keluarga</label>
+      <div class="hint" style="margin:0 0 8px">Supaya muncul di pohon, sambungkan ke orang tua atau pasangannya.</div>
+      <div class="big-seg wrap grid2" id="lType">
+        <button type="button" data-v="anak">${ic('arrow-up')} Anak dari…</button>
+        <button type="button" data-v="pasangan">${ic('heart')} Suami/istri dari…</button>
+        <button type="button" data-v="ortubaru">${ic('plus')} Orang tuanya belum ada</button>
+        <button type="button" data-v="nanti">${ic('chevron-right')} Hubungkan nanti</button>
+      </div></div><div id="lBox"></div>`;
     bindSeg(body);
     bindSimilar(body,'n_',[],id=>{ wz.pid=id; if(wz.mode==='self') setMe(id); toast('Memakai data '+nick(id)+' yang sudah ada'); wzGo('profil'); },'Ini orangnya');
-    const lq=body.querySelector('#lQ'), lres=body.querySelector('#lRes'), lsel=body.querySelector('#lSel');
-    const drawSel=()=>{ lsel.innerHTML=wz.link.id?`<div class="selbox">${ic('check')} ${wz.link.type==='anak'?'Anak dari':'Pasangan dari'} ${choiceHTML(P(wz.link.id),'disabled')}</div>`:''; };
-    const drawRes=()=>{ const list=searchPeople(lq.value).slice(0,8);
-      lres.innerHTML=list.map(p=>choiceHTML(p,`data-l="${p.id}"`)).join('');
-      lres.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{ wz.link.id=b.dataset.l; lq.value=''; lres.innerHTML=''; drawSel(); }); };
-    body.querySelectorAll('#lType button').forEach(b=>b.addEventListener('click',()=>{ wz.link.type=b.dataset.v; drawSel(); }));
-    lq.oninput=drawRes; drawSel();
+    const box=body.querySelector('#lBox');
+    // pencarian orang yg sudah ada -> callback(id)
+    const searchBlock=(ph,sel,onPick,selLabel,into=box)=>{
+      const wrap=document.createElement('div');
+      wrap.innerHTML=`<div class="wf"><input class="lq" placeholder="${esc(ph)}" autocomplete="off" style="margin-top:10px"></div><div class="lsel"></div><div class="lres"></div>`;
+      into.appendChild(wrap);
+      const q=wrap.querySelector('.lq'), res=wrap.querySelector('.lres'), selEl=wrap.querySelector('.lsel');
+      const drawSel=()=>{ selEl.innerHTML=sel()?`<div class="selbox">${ic('check')} ${esc(selLabel)} ${choiceHTML(P(sel()),'disabled')}</div>`:''; };
+      q.oninput=()=>{ const list=searchPeople(q.value).slice(0,8);
+        res.innerHTML=list.map(p=>choiceHTML(p,`data-l="${p.id}"`)).join('');
+        res.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{ onPick(b.dataset.l); q.value=''; res.innerHTML=''; drawSel(); }); };
+      drawSel();
+    };
+    const drawLink=()=>{
+      const L=wz.link;
+      body.querySelectorAll('#lType button').forEach(b=>b.classList.toggle('on',b.dataset.v===L.type));
+      box.innerHTML='';
+      if(L.type==='anak') searchBlock('Cari nama ayah atau ibunya…',()=>L.id,id=>L.id=id,'Anak dari');
+      if(L.type==='pasangan') searchBlock('Cari nama suami/istrinya…',()=>L.id,id=>L.id=id,'Pasangan dari');
+      if(L.type==='ortubaru'){
+        box.innerHTML=`<div class="subcard"><div class="subt">Orang tua baru</div>
+          <div class="hint" style="margin-top:6px">Isi minimal salah satu. Keduanya akan dibuat sekaligus.</div>
+          <div class="wf"><label>Nama ayah</label><input id="fa_nl" placeholder="Nama lengkap ayah" autocapitalize="words" autocomplete="off"><div id="fa_sim"></div>
+          <div class="big-seg" id="fa_st" style="margin-top:8px"><button type="button" data-v="hidup" class="on">Masih hidup</button><button type="button" data-v="wafat">Telah wafat</button></div>
+          <label>Nama ibu</label><input id="fi_nl" placeholder="Nama lengkap ibu" autocapitalize="words" autocomplete="off"><div id="fi_sim"></div>
+          <div class="big-seg" id="fi_st" style="margin-top:8px"><button type="button" data-v="hidup" class="on">Masih hidup</button><button type="button" data-v="wafat">Telah wafat</button></div>
+          <label>Ayah/ibu ini keturunan siapa? <span style="font-weight:400;color:var(--muted)">(kalau tahu)</span></label>
+          <div class="big-seg" id="gpSide"><button type="button" data-v="ayah" class="${L.side==='ayah'?'on':''}">Dari pihak ayah</button><button type="button" data-v="ibu" class="${L.side==='ibu'?'on':''}">Dari pihak ibu</button></div></div></div>`;
+        bindSeg(box);
+        box.querySelectorAll('#gpSide button').forEach(b=>b.addEventListener('click',()=>L.side=b.dataset.v));
+        const useExisting=id=>{ L.type='anak'; L.id=id; toast(nick(id)+' sudah ada — dipakai sebagai orang tuanya'); drawLink(); };
+        bindSimilar(box,'fa_',[],useExisting,'Pakai ini');
+        bindSimilar(box,'fi_',[],useExisting,'Pakai ini');
+        searchBlock('Cari nama kakek atau nenek…',()=>L.gp,id=>L.gp=id,'Keturunan dari',box.querySelector('.subcard'));
+      }
+      if(L.type==='nanti') box.innerHTML=`<div class="wnote small">${ic('info')} Data tetap tersimpan, tapi <b>belum muncul di pohon</b>. Nanti bisa disambungkan lewat menu <b>Belum terhubung</b>.</div>`;
+    };
+    body.querySelectorAll('#lType button').forEach(b=>b.addEventListener('click',()=>{ wz.link.type=b.dataset.v; wz.link.id=null; drawLink(); }));
+    drawLink();
     footer(()=>wzGo('who'),'Simpan & lanjut '+ic('chevron-right'),()=>{
       const d=readPerson(body,'n_'); if(!validPerson(body,'n_',d)) return;
-      if(!wz.link.id){ toast('Pilih orang tua atau pasangannya dulu','error'); lq.focus(); return; }
+      const L=wz.link;
+      if((L.type==='anak'||L.type==='pasangan') && !L.id){ toast(L.type==='anak'?'Pilih ayah/ibunya, atau pilih "Orang tuanya belum ada"':'Pilih suami/istrinya dulu','error'); box.querySelector('.lq')?.focus(); return; }
+      let fa=null, mo=null;
+      if(L.type==='ortubaru'){
+        const fn=(box.querySelector('#fa_nl').value||'').trim(), mn=(box.querySelector('#fi_nl').value||'').trim();
+        if(!fn && !mn){ toast('Isi nama ayah atau ibunya','error'); box.querySelector('#fa_nl').focus(); return; }
+        const st=id=>box.querySelector('#'+id+' button.on')?.dataset.v||'hidup';
+        const base={namaPanggilan:'',telepon:'',domisili:'',tahunLahir:''};
+        if(fn) fa=addPerson({...base,namaLengkap:fn,jk:'L',status:st('fa_st')});
+        if(mn) mo=addPerson({...base,namaLengkap:mn,jk:'P',status:st('fi_st')});
+      }
       const id=addPerson(d);
-      if(wz.link.type==='anak') addChild(wz.link.id,id); else addSpouse(wz.link.id,id);
+      if(L.type==='anak') addChild(L.id,id);
+      else if(L.type==='pasangan') addSpouse(L.id,id);
+      else if(L.type==='ortubaru'){
+        if(fa&&mo){ addSpouse(fa,mo); addChild(fa,id); } else addChild(fa||mo,id);
+        const blood=L.side==='ibu'?(mo||fa):(fa||mo);
+        if(L.gp && blood && !parentUnionOf(blood)) addChild(L.gp,blood);
+      }
       wz.pid=id; wz.link=null; if(wz.mode==='self') setMe(id);
-      toast('Tersimpan: '+d.namaLengkap); wzGo('pasangan');
+      toast(L.type==='nanti'?'Tersimpan (belum terhubung ke pohon)':'Tersimpan: '+d.namaLengkap); wzGo('pasangan');
     });
     return;
   }
@@ -1476,7 +1590,11 @@ function wzRender(){
   if(s==='ortu'){
     title.textContent='Orang tua '+nick(pid);
     const pa=parentsOf(pid);
-    body.innerHTML=`${pa.length?`<div class="wf"><label>Sudah tercatat</label></div>${pa.map(x=>choiceHTML(P(x),'disabled')).join('')}`:'<div class="wnote small">Orang tua belum tercatat. Cari namanya, atau tambahkan baru.</div>'}
+    const lost=!isConnected(pid);
+    const up=pa.filter(x=>!parentsOf(x).length);   // orang tua yg orang tuanya sendiri belum tercatat
+    body.innerHTML=`${lost?`<div class="simbox"><div class="simt">${ic('triangle-alert')} Keluarga ini belum tersambung ke pohon utama</div><div style="font-size:13px;color:#7c2d12;margin:0 2px 4px">Sambungkan dengan menambahkan orang tua${pa.length?' dari '+esc(pa.map(nick).join(' / ')):''} yang sudah ada di daftar.</div></div>`:''}
+      ${pa.length?`<div class="wf"><label>Sudah tercatat</label></div>${pa.map(x=>choiceHTML(P(x),'disabled')).join('')}`:'<div class="wnote small">Orang tua belum tercatat. Cari namanya, atau tambahkan baru.</div>'}
+      ${up.length?`<div class="wf"><label>Lanjut ke atas</label></div>${up.map(x=>`<button class="choice addnew" data-upw="${x}">${ic('arrow-up')} <span class="ctxt"><b>Lengkapi data ${esc(nick(x))}</b><span class="ctx">Isi orang tua & saudara ${esc(nick(x))}${lost?' — supaya tersambung ke pohon':''}</span></span></button>`).join('')}`:''}
       ${pa.length<2?`<div class="wf"><label>${pa.length?'Tambah ayah/ibu yang satunya':'Cari ayah atau ibu'}</label><input id="oQ" placeholder="Ketik nama…" autocomplete="off"></div><div id="oRes"></div>
       <button class="choice addnew" id="oAdd">${ic('plus')} <span class="ctxt"><b>Belum ada di daftar</b><span class="ctx">Tambahkan ayah/ibu baru</span></span></button><div id="oForm"></div>`:''}`;
     if(pa.length<2){
@@ -1494,6 +1612,7 @@ function wzRender(){
           toast('Tersimpan: '+d.namaLengkap); wzRender(); };
       };
     }
+    body.querySelectorAll('[data-upw]').forEach(b=>b.onclick=()=>{ wz.pid=b.dataset.upw; wz.mode='other'; wz.union=null; wzGo('profil'); });
     footer(()=>wzGo('anak'),'Selesai '+ic('check'),()=>wzGo('done'));
     return;
   }
