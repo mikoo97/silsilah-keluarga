@@ -13,10 +13,10 @@
     --danger:#dc2626; --ok:#16a34a;
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
-  .app{display:flex;flex-direction:column;height:100vh}
-  header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-shrink:0}
-  header h1{font-size:18px;margin:0;flex:1}
+  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden}
+  .app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+  header{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-shrink:0;position:relative;z-index:45}
+  header h1{font-size:18px;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   header .brand{display:flex;align-items:center;gap:8px}
   header .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
   .btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px}
@@ -25,25 +25,27 @@
   .btn.primary:hover{filter:brightness(1.05)}
   .btn.danger{color:var(--danger);border-color:#fecaca}
   .btn.sm{padding:4px 8px;font-size:12px}
-  .drivestatus{font-size:12px;padding:5px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .btn:disabled{opacity:.35;cursor:default}
+  .iconbtn{font-size:18px;padding:5px 11px;line-height:1}
+  .drivestatus{font-size:12px;padding:5px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;border:0;cursor:pointer;font-family:inherit}
   .drivestatus.off{background:#f1f5f9;color:#64748b}
   .drivestatus.saving{background:#fef9c3;color:#854d0e}
   .drivestatus.saved{background:#dcfce7;color:#15803d}
   .drivestatus.error{background:#fee2e2;color:#b91c1c}
-  .main{display:flex;flex:1;min-height:0;position:relative}
-  .iconbtn{font-size:18px;padding:5px 11px;line-height:1}
+  /* menu ⋯ */
+  .menuwrap{position:relative}
+  .menu{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);min-width:230px;padding:6px;display:none;z-index:60}
+  .menu.show{display:block}
+  .menu button{display:flex;width:100%;align-items:center;gap:10px;background:none;border:0;padding:10px 12px;border-radius:8px;font-size:14px;cursor:pointer;text-align:left;color:var(--text);font-family:inherit}
+  .menu button:hover{background:#f1f5f9}
+  .menu button.danger{color:var(--danger)}
+  .menu hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
+  .main{display:flex;flex:1;min-height:0;position:relative;overflow:hidden}  /* potong laci yg tersembunyi agar HP tidak memperkecil halaman */
   .backdrop{position:absolute;inset:0;background:rgba(15,23,42,.35);z-index:35;opacity:0;pointer-events:none;transition:opacity .2s}
   .backdrop.show{opacity:1;pointer-events:auto}
   /* sidebar = drawer (sembunyi sampai dibutuhkan) */
   .sidebar{position:absolute;top:0;left:0;bottom:0;width:300px;max-width:85%;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:40;transform:translateX(-100%);transition:transform .22s ease;box-shadow:2px 0 18px rgba(0,0,0,.12)}
   .sidebar.open{transform:none}
-  /* pencarian "Pusatkan di" */
-  .focuspick{position:relative}
-  .focuspick .search{min-width:190px;padding:6px 10px}
-  .focuslist{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:8px;margin-top:4px;max-height:260px;overflow:auto;z-index:25;box-shadow:0 8px 24px rgba(0,0,0,.14);display:none}
-  .focuslist.show{display:block}
-  .focuslist .fitem{padding:7px 10px;font-size:13px;cursor:pointer;display:flex;gap:8px;align-items:center}
-  .focuslist .fitem:hover{background:#f1f5f9}
   .sidebar .top{padding:10px;border-bottom:1px solid var(--line)}
   .search{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
   .people{overflow-y:auto;flex:1;padding:6px}
@@ -59,14 +61,22 @@
   .av.dead{filter:grayscale(1) brightness(.9)}
   .av .cross{position:absolute;right:-3px;bottom:-3px;background:#fff;border-radius:50%;width:15px;height:15px;font-size:10px;display:flex;align-items:center;justify-content:center;color:#475569;border:1px solid var(--line)}
   /* detail */
-  .detail{width:330px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-  .detail .empty{padding:30px 18px;color:var(--muted);text-align:center;font-size:14px}
+  .detail{width:330px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;position:relative}
+  .detail .empty{padding:30px 18px;color:var(--muted);text-align:center;font-size:14px;line-height:1.6}
   .dhead{padding:18px;display:flex;flex-direction:column;align-items:center;gap:8px;border-bottom:1px solid var(--line);text-align:center}
   .dhead .bigav{width:72px;height:72px;font-size:28px}
   .dhead .nm{font-size:18px;font-weight:700}
   .dhead .pg{font-size:13px;color:var(--muted)}
+  .dhead .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
   .badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#f1f5f9;color:var(--muted)}
   .badge.dead{background:#f1f5f9;color:#475569}
+  .badge.me{background:#e0edff;color:var(--accent)}
+  .panggil{margin:12px 18px 4px;padding:12px 14px;border-radius:12px;background:#f0f7ff;border:1px solid #dbeafe}
+  .panggil .pk{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .panggil .pv{font-size:20px;font-weight:700;color:var(--accent);margin:2px 0}
+  .panggil .pd{font-size:12px;color:#334155;line-height:1.45}
+  .panggil .pn{font-size:10.5px;color:var(--muted);margin-top:6px}
+  .panggil.muted{background:#f8fafc;border-color:var(--line);font-size:12.5px;color:var(--muted);line-height:1.5}
   .field{padding:8px 18px;display:flex;font-size:13px;border-bottom:1px solid #f1f5f9}
   .field .k{width:90px;color:var(--muted);flex-shrink:0}
   .field .v{flex:1}
@@ -78,31 +88,67 @@
   .relrow .ord{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .relrow .reorder{display:flex;gap:2px;margin-left:auto}
   .relrow .reorder .btn{padding:2px 7px;line-height:1}
-  .btn:disabled{opacity:.35;cursor:default}
-  .dhead .editbtn{margin-top:4px}
   .actions{display:flex;flex-wrap:wrap;gap:6px;padding:12px 18px;border-top:1px solid var(--line)}
   /* tree */
-  .treewrap{flex:1;position:relative;overflow:hidden;background:
+  .treewrap{flex:1;position:relative;overflow:hidden;min-width:0;background:
      radial-gradient(circle, #e2e8f0 1px, transparent 1px); background-size:22px 22px}
-  .treebar{position:absolute;top:10px;left:10px;z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-  .treebar select{padding:6px;border:1px solid var(--line);border-radius:6px;font-size:13px;max-width:200px}
+  .treebar{position:absolute;top:10px;left:10px;z-index:6;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;gap:6px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.06);max-width:calc(100% - 20px)}
+  .viewseg{display:flex;background:#f1f5f9;border-radius:9px;padding:2px;flex-shrink:0}
+  .viewseg button{border:0;background:none;padding:6px 10px;border-radius:7px;font-size:13px;cursor:pointer;color:var(--muted);font-family:inherit;white-space:nowrap}
+  .viewseg button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .focuspick{position:relative;flex:1;min-width:0}
+  .focuspick .search{width:240px;max-width:100%;padding:7px 10px}
+  .focuslist{position:absolute;top:100%;left:0;min-width:100%;width:280px;max-width:calc(100vw - 40px);background:#fff;border:1px solid var(--line);border-radius:8px;margin-top:4px;max-height:300px;overflow:auto;z-index:25;box-shadow:0 8px 24px rgba(0,0,0,.14);display:none}
+  .focuslist.show{display:block}
+  .focuslist .fitem{padding:7px 10px;font-size:13px;cursor:pointer;display:flex;gap:8px;align-items:center}
+  .focuslist .fitem:hover{background:#f1f5f9}
   .zoombtns{position:absolute;bottom:14px;right:14px;z-index:5;display:flex;flex-direction:column;gap:6px}
-  .zoombtns .btn{width:36px;height:36px;justify-content:center;font-size:18px;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-  svg{width:100%;height:100%;cursor:grab}
+  .zoombtns .btn{width:38px;height:38px;justify-content:center;font-size:18px;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  svg{width:100%;height:100%;cursor:grab;touch-action:none;display:block}
   svg.grabbing{cursor:grabbing}
-  .node rect{fill:#fff;stroke:var(--line);stroke-width:1.5;rx:10}
+  .node rect{fill:#fff;stroke:var(--line);stroke-width:1.5}
   .node.sel rect{stroke:var(--accent);stroke-width:2.5}
-  .node text.nm{font-size:13px;font-weight:600;fill:var(--text)}
+  .node text.nm{font-size:12.5px;font-weight:600;fill:var(--text)}
   .node text.sub{font-size:11px;fill:var(--muted)}
   .node{cursor:pointer}
   .node.draggable{cursor:grab}
   .node.focus rect{stroke:var(--accent2);stroke-width:3}
-  .treehint{font-size:11px;color:var(--muted)}
+  .node.me rect{fill:#f0f7ff}
+  .tog{cursor:pointer}
+  .tog rect{fill:#fff;stroke:#94a3b8;stroke-width:1.2}
+  .tog.closed rect{fill:var(--accent);stroke:var(--accent)}
+  .tog text{font-size:11px;font-weight:700;fill:#475569;pointer-events:none}
+  .tog.closed text{fill:#fff}
+  .tog:hover rect{stroke:var(--accent);stroke-width:2}
+  #genlayer{pointer-events:none}
+  .gen rect{fill:rgba(255,255,255,.92);stroke:#e2e8f0}
+  .gen text{font-size:10.5px;font-weight:700;fill:#64748b;letter-spacing:.04em}
   .link{fill:none;stroke:#94a3b8;stroke-width:1.5}
   .marriage{stroke:#cbd5e1;stroke-width:2}
+  .marriage.divorced{stroke:#cbd5e1;stroke-dasharray:5 4}
   .treeempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);text-align:center;flex-direction:column;gap:14px}
+  /* tampilan daftar */
+  .listview{position:absolute;inset:0;overflow:auto;background:var(--bg);padding:66px 14px 80px;z-index:4}
+  .listview[hidden]{display:none}
+  .olup{font-size:13px;color:var(--muted);margin:0 0 10px 4px}
+  .olup a{color:var(--accent);cursor:pointer;text-decoration:none;font-weight:600}
+  .olrow{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;cursor:pointer;background:#fff;border:1px solid var(--line);margin:4px 0;max-width:640px}
+  .olrow:hover{border-color:#bfdbfe}
+  .olrow.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .olrow .av{width:32px;height:32px;font-size:13px}
+  .olrow .oltx{flex:1;min-width:0}
+  .olrow .nm{font-size:13.5px;font-weight:600;line-height:1.25}
+  .olrow .sub{font-size:11.5px;color:var(--muted)}
+  .olrow .sp{font-size:11.5px;color:#475569}
+  .olrow .sp a{color:inherit;text-decoration:underline dotted;cursor:pointer}
+  .olrow .ord{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .olrow .tg{width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;flex-shrink:0;font-size:12px;color:#475569}
+  .olrow .tg.blank{visibility:hidden}
+  .chip{font-size:11px;padding:2px 8px;border-radius:20px;background:#e0edff;color:var(--accent);white-space:nowrap;flex-shrink:0}
+  .olkids{margin-left:22px;padding-left:12px;border-left:2px solid #dbe3ee}
+  .olgen{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin:10px 0 2px 4px}
   /* modal */
-  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:50}
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:70}
   .modal{background:#fff;border-radius:14px;width:420px;max-width:92vw;max-height:88vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.25)}
   .modal h3{margin:0;padding:16px 18px;border-bottom:1px solid var(--line);font-size:16px}
   .mbody{padding:16px 18px}
@@ -117,36 +163,55 @@
   .pickitem:hover{background:#f1f5f9}
   .hint{font-size:12px;color:var(--muted);margin-bottom:8px}
   .detailclose{display:none;position:absolute;top:8px;right:8px;z-index:3;border:1px solid var(--line);background:#fff;border-radius:8px;width:32px;height:32px;align-items:center;justify-content:center;cursor:pointer;font-size:15px}
-  .marriage.divorced{stroke:#cbd5e1;stroke-dasharray:5 4}
+  /* huruf besar (untuk sesepuh) */
+  body.big header, body.big .sidebar, body.big .detail, body.big .listview, body.big .modal, body.big .treebar, body.big .menu, body.big .zoombtns{zoom:1.2}
   /* ===== MOBILE ===== */
   @media (max-width:760px){
-    header{flex-wrap:wrap;gap:6px;padding:8px 10px}
-    header h1{font-size:16px;flex:1 1 auto;min-width:0}
+    header{gap:6px;padding:7px 10px}
+    header h1{font-size:16px}
     header .brand{display:none}
-    .btn{padding:6px 9px;font-size:12px}
-    .drivestatus{font-size:11px;padding:4px 8px}
+    .drivestatus .stx{display:none}
+    .drivestatus{padding:6px 9px}
     .detail{position:absolute;top:0;right:0;bottom:0;width:90%;max-width:360px;z-index:40;transform:translateX(100%);transition:transform .22s ease;box-shadow:-2px 0 18px rgba(0,0,0,.14);border-left:1px solid var(--line)}
     .detail.open{transform:none}
     .detailclose{display:flex}
     .sidebar{width:86%}
-    .treebar{flex-wrap:wrap;max-width:72vw}
-    .focuspick .search{min-width:150px}
-    .zoombtns .btn{width:42px;height:42px}
+    .treebar{left:8px;right:8px;top:8px;max-width:none}
+    .focuspick .search{width:100%}
+    .viewseg button{padding:6px 8px}
+    .viewseg .lbl{display:none}
+    .zoombtns .btn{width:44px;height:44px}
+    .listview{padding:60px 8px 80px}
+    .olkids{margin-left:6px;padding-left:6px}
+    .olrow{gap:6px;padding:6px}
+    .olrow .av{width:28px;height:28px;font-size:12px}
+    .olrow .tg{width:24px;height:24px}
+    .actions .btn,.relrow .reorder .btn{padding:7px 10px}
   }
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-    <button class="btn iconbtn" id="btnMenu" title="Tampilkan/sembunyikan daftar nama">☰</button>
+    <button class="btn iconbtn" id="btnMenu" title="Daftar semua nama">☰</button>
     <div class="brand"><div class="logo">🌳</div></div>
     <h1>Happy Family</h1>
-    <span id="driveStatus" class="drivestatus off">● Lokal saja</span>
-    <button class="btn" id="btnDrive">☁ Hubungkan Drive</button>
-    <button class="btn" id="btnExport" title="Cadangkan ke file">⬇ Ekspor</button>
-    <button class="btn" id="btnImport" title="Muat data dari file cadangan">⬆ Impor</button>
+    <button id="driveStatus" class="drivestatus off" title="Status penyimpanan — klik untuk pengaturan Drive"><b>●</b><span class="stx">Lokal saja</span></button>
+    <div class="menuwrap">
+      <button class="btn iconbtn" id="btnMore" title="Menu lainnya">⋯</button>
+      <div class="menu" id="moreMenu">
+        <button id="btnDrive">☁ Hubungkan Drive</button>
+        <button id="btnHomeMenu">🏠 Ke tampilan awal</button>
+        <button id="btnMe">👤 Pilih "Saya"</button>
+        <button id="btnFont">🔠 Huruf besar</button>
+        <hr>
+        <button id="btnExport">⬇ Ekspor (cadangan)</button>
+        <button id="btnImport">⬆ Impor dari file</button>
+        <hr>
+        <button id="btnReset" class="danger">🗑 Kosongkan semua data</button>
+      </div>
+    </div>
     <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-    <button class="btn danger" id="btnReset">Kosongkan</button>
   </header>
   <div class="main">
     <div class="backdrop" id="backdrop"></div>
@@ -161,39 +226,45 @@
     </aside>
     <!-- tree -->
     <div class="treewrap">
-      <div class="treebar">
-        <span style="font-size:13px;color:var(--muted)">Pusatkan di:</span>
+      <div class="treebar" id="treebar">
+        <div class="viewseg" id="viewSeg">
+          <button data-view="tree" title="Tampilan pohon">🌳<span class="lbl"> Pohon</span></button>
+          <button data-view="list" title="Tampilan daftar">☰<span class="lbl"> Daftar</span></button>
+        </div>
         <div class="focuspick">
-          <input id="focusSearch" class="search" placeholder="cari nama untuk dipusatkan..." autocomplete="off">
+          <input id="focusSearch" class="search" placeholder="🔍 Cari & pusatkan nama…" autocomplete="off">
           <div id="focusList" class="focuslist"></div>
         </div>
-        <span class="treehint">· klik 2× orang untuk memusatkan (leluhur ↑ &amp; keturunan ↓)</span>
+        <button class="btn sm iconbtn" id="btnHome" title="Kembali ke tampilan awal">🏠</button>
       </div>
-      <svg id="svg"><g id="viewport"></g></svg>
+      <svg id="svg"><g id="viewport"></g><g id="genlayer"></g></svg>
+      <div class="listview" id="listView" hidden></div>
       <div class="treeempty" id="treeEmpty">
         <div style="font-size:40px">🌳</div>
         <div>Belum ada data.<br>Klik <b>☰</b> lalu <b>Tambah orang</b> untuk mulai.</div>
       </div>
-      <div class="zoombtns">
-        <button class="btn" id="zoomIn">+</button>
-        <button class="btn" id="zoomOut">−</button>
+      <div class="zoombtns" id="zoomBtns">
+        <button class="btn" id="zoomIn" title="Perbesar">+</button>
+        <button class="btn" id="zoomOut" title="Perkecil">−</button>
         <button class="btn" id="zoomFit" title="Pas ke layar">⤢</button>
       </div>
     </div>
     <!-- detail (drawer) -->
     <aside class="detail" id="detail">
       <button class="detailclose" id="detailClose" title="Tutup">✕</button>
-      <div id="detailBody"><div class="empty">Pilih seseorang dari pohon atau daftar (☰) untuk melihat & mengelola hubungannya.</div></div>
+      <div id="detailBody"></div>
     </aside>
   </div>
 </div>
 
 <script>
 /* ============ DATA MODEL ============
- state = { people:[{id,namaLengkap,namaPanggilan,telepon,domisili,jk:'L'|'P'|'',status:'hidup'|'wafat'}],
-           unions:[{id,partners:[id..(1-2)],children:[id..]}] }
+ state = { people:[{id,namaLengkap,namaPanggilan,telepon,domisili,tahunLahir,jk:'L'|'P'|'',status:'hidup'|'wafat'}],
+           unions:[{id,partners:[id..(1-2)],children:[id..],status?:'cerai'}],
+           settings?:{homeId} }
    - union dengan 2 partner = pasangan menikah
    - union dengan 1 partner = orang tua tunggal
+   - settings.homeId = orang yang dipusatkan saat aplikasi dibuka
 */
 let state = load() || {people:[], unions:[]};
 let selectedId = null;
@@ -201,10 +272,14 @@ let rootId = null;
 let view = {x:60,y:60,k:1};
 let nodePos = {};      // pid -> {x,y} pusat kotak (koordinat layout) untuk drag
 let nodeDrag = null;   // status drag kotak anak di canvas
+let viewMode = lsGet('silsilah-view')==='list' ? 'list' : 'tree';
+let meId = lsGet('silsilah-me');   // "Saya" di perangkat ini -> dasar panggilan
 
 /* ---------- persistence ---------- */
 function save(){ localStorage.setItem('silsilah-data', JSON.stringify(state)); schedulePush(); }
 function load(){ try{ return JSON.parse(localStorage.getItem('silsilah-data')); }catch(e){ return null; } }
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,v); }catch(e){} }
 function uid(p){ return p+Math.random().toString(36).slice(2,9); }
 
 /* ---------- queries ---------- */
@@ -212,8 +287,11 @@ const P = id => state.people.find(p=>p.id===id);
 const unionsOf = id => state.unions.filter(u=>u.partners.includes(id));
 function spousesOf(id){ const s=[]; unionsOf(id).forEach(u=>u.partners.forEach(pid=>{ if(pid!==id) s.push(pid); })); return s; }
 function childrenOf(id){ const c=[]; unionsOf(id).forEach(u=>u.children.forEach(ch=>c.push(ch))); return c; }
-const parentUnionOf = id => state.unions.find(u=>u.children.includes(id));
+// utamakan orang tua yang berpasangan bila seseorang tercatat di lebih dari satu keluarga
+const parentUnionOf = id => state.unions.find(u=>u.children.includes(id)&&u.partners.length===2) || state.unions.find(u=>u.children.includes(id));
 function parentsOf(id){ const u=parentUnionOf(id); return u?u.partners:[]; }
+function homeId(){ const h=state.settings&&state.settings.homeId; return h&&P(h)?h:null; }
+const fullName = id => (P(id)||{}).namaLengkap||'(tanpa nama)';
 
 /* ---------- mutations ---------- */
 function addPerson(data){ const id=uid('p'); state.people.push({id,...data}); save(); return id; }
@@ -255,7 +333,109 @@ function deletePerson(id){
   state.people = state.people.filter(p=>p.id!==id);
   state.unions.forEach(u=>{ u.partners=u.partners.filter(x=>x!==id); u.children=u.children.filter(x=>x!==id); });
   state.unions = state.unions.filter(u=>u.partners.length>0 || u.children.length>0);
+  if(meId===id){ meId=null; lsSet('silsilah-me',null); }
   save();
+}
+function setHome(id){ state.settings=Object.assign({},state.settings,{homeId:id}); save(); }
+
+/* ============ PANGGILAN (kebiasaan Jawa) ============ */
+// jarak ke semua leluhur: id -> {d: berapa generasi ke atas, via: anak dari leluhur itu di jalur ini}
+function ancestorsDist(id){
+  const res=new Map([[id,{d:0,via:null}]]);
+  let frontier=[id];
+  for(let d=1; frontier.length && d<15; d++){
+    const next=[];
+    frontier.forEach(x=>parentsOf(x).forEach(par=>{ if(!res.has(par)){ res.set(par,{d,via:x}); next.push(par); } }));
+    frontier=next;
+  }
+  return res;
+}
+// hubungan darah terdekat a -> b
+function bloodRel(a,b){
+  const A=ancestorsDist(a), B=ancestorsDist(b);
+  let best=null;
+  A.forEach((ia,anc)=>{ const ib=B.get(anc); if(!ib) return;
+    const s=ia.d+ib.d;
+    if(!best || s<best.s) best={s,up:ia.d,down:ib.d,cA:ia.via,cB:ib.via,anc:[anc]};
+    else if(s===best.s && ia.d===best.up) best.anc.push(anc);
+  });
+  return best;
+}
+// apakah x lebih tua (urutan lahir) dari y; null = belum diketahui
+function olderThan(x,y){
+  if(!x||!y||x===y) return null;
+  const ux=parentUnionOf(x), uy=parentUnionOf(y);
+  if(ux && ux===uy) return ux.children.indexOf(x) < ux.children.indexOf(y);
+  const tx=parseInt((P(x)||{}).tahunLahir), ty=parseInt((P(y)||{}).tahunLahir);
+  if(tx && ty && tx!==ty) return tx<ty;
+  return null;
+}
+// g = berapa generasi orang itu di atas "saya" (negatif = di bawah)
+function callTerm(g, senior, jk, direct){
+  const L = jk!=='P';
+  if(g>=5) return 'Mbah';
+  if(g===4) return 'Mbah Canggah';
+  if(g===3) return 'Mbah Buyut';
+  if(g===2) return L?'Mbah Kakung':'Mbah Putri';
+  if(g===1){
+    if(direct) return L?'Bapak':'Ibu';
+    if(senior===null) return L?'Pakde / Paklik':'Bude / Bulik';
+    return senior ? (L?'Pakde':'Bude') : (L?'Paklik':'Bulik');
+  }
+  if(g===0){
+    if(senior===null) return (L?'Mas':'Mbak')+' / Dik';
+    return senior ? (L?'Mas':'Mbak') : 'Dik';
+  }
+  return L ? 'Le / nama' : 'Nduk / nama';
+}
+function relLabel(up,down,jk,senior){
+  const L = jk!=='P', g=up-down;
+  if(down===0) return ({1:L?'Ayah':'Ibu',2:L?'Kakek':'Nenek',3:'Buyut',4:'Canggah',5:'Wareng'})[up]||'Leluhur';
+  if(up===0) return ({1:'Anak',2:'Cucu',3:'Cicit (buyut)',4:'Canggah'})[down]||'Keturunan';
+  if(g===0){
+    if(up===1) return senior===null ? 'Saudara kandung' : (senior?'Kakak kandung':'Adik kandung');
+    return ({2:'Sepupu (sedulur misan)',3:'Sepupu dua kali (sedulur mindho)',4:'Sepupu tiga kali (sedulur mentelu)'})[up]||'Saudara jauh';
+  }
+  if(g===1) return down===1 ? 'Saudara kandung orang tuamu' : down===2 ? 'Sepupu orang tuamu' : 'Kerabat satu generasi di atasmu';
+  if(g===2 && down===1) return 'Saudara kakek/nenekmu';
+  if(g===-1) return up===1 ? 'Keponakan' : up===2 ? 'Anak sepupumu' : 'Kerabat satu generasi di bawahmu';
+  if(g===-2 && up===1) return 'Cucu keponakan';
+  return g>0 ? `Kerabat ${g} generasi di atasmu` : `Kerabat ${-g} generasi di bawahmu`;
+}
+function ancText(r){ return r.anc.length && r.up>0 && r.down>0 ? 'Leluhur bersama: '+r.anc.map(fullName).join(' & ') : ''; }
+function seniorOf(r){ return (r.cA&&r.cB) ? olderThan(r.cB,r.cA) : null; }
+function relationTo(me,t){
+  if(!me||!t||!P(me)||!P(t)) return null;
+  if(me===t) return {self:true};
+  const pt=P(t);
+  if(spousesOf(me).includes(t)) return {call:'Nama / panggilan sayang', label:pt.jk==='P'?'Istrimu':'Suamimu', desc:''};
+  // 1) hubungan darah
+  const r=bloodRel(me,t);
+  if(r){ const sen=seniorOf(r), g=r.up-r.down;
+    return {call:callTerm(g,sen,pt.jk,r.down===0), label:relLabel(r.up,r.down,pt.jk,sen), desc:ancText(r)}; }
+  // 2) dia pasangan dari kerabat sedarahku (mis. istri pakde = bude)
+  for(const s of spousesOf(t)){
+    const r2=bloodRel(me,s); if(!r2) continue;
+    const sen=seniorOf(r2), g=r2.up-r2.down, ps=P(s);
+    let label;
+    if(r2.up===0 && r2.down===1) label='Menantu';
+    else if(r2.up===1 && r2.down===1) label='Ipar';
+    else if(r2.down===0 && r2.up===1) label=pt.jk==='P'?'Ibu tiri / istri ayahmu':'Ayah tiri / suami ibumu';
+    else label=(pt.jk==='P'?'Istri':'Suami')+' dari '+relLabel(r2.up,r2.down,ps.jk,sen).toLowerCase();
+    return {call:callTerm(g,sen,pt.jk,false), label, desc:(pt.jk==='P'?'Istri ':'Suami ')+fullName(s)};
+  }
+  // 3) dia kerabat sedarah dari pasanganku (mertua, ipar, dll)
+  for(const s of spousesOf(me)){
+    const r3=bloodRel(s,t); if(!r3) continue;
+    const sen=seniorOf(r3), g=r3.up-r3.down, sw=P(s).jk==='P'?'istrimu':'suamimu';
+    let label = (r3.up===1&&r3.down===0) ? 'Mertua' : (r3.up===1&&r3.down===1) ? 'Ipar' : relLabel(r3.up,r3.down,pt.jk,sen)+' dari '+sw;
+    return {call:callTerm(g,sen,pt.jk,r3.down===0), label, desc:'Lewat '+sw+', '+fullName(s)};
+  }
+  return null;
+}
+function callWithAlm(rel,t){
+  const p=P(t); if(!rel||!rel.call) return '';
+  return (p.status==='wafat' ? (p.jk==='P'?'Almh. ':'Alm. ') : '') + rel.call;
 }
 
 /* ============ RENDER: SIDEBAR ============ */
@@ -263,7 +443,7 @@ function avatarHTML(p,cls=''){
   const init=(p.namaPanggilan||p.namaLengkap||'?').trim()[0]?.toUpperCase()||'?';
   const g = p.jk==='L'?'male':p.jk==='P'?'female':'unknown';
   const dead = p.status==='wafat'?'dead':'';
-  return `<div class="av ${g} ${dead} ${cls}">${init}${p.status==='wafat'?'<span class="cross">✝</span>':''}</div>`;
+  return `<div class="av ${g} ${dead} ${cls}">${esc(init)}${p.status==='wafat'?'<span class="cross">✝</span>':''}</div>`;
 }
 function renderList(){
   const q=(document.getElementById('searchBox').value||'').toLowerCase();
@@ -286,9 +466,19 @@ function relRow(id){
   return `<div class="relrow" data-id="${id}">${avatarHTML(p)}<div><div class="nm">${esc(p.namaLengkap)}</div>
     <div class="sub" style="font-size:11px;color:var(--muted)">${esc(p.namaPanggilan||'')}</div></div></div>`;
 }
+function panggilCard(p){
+  if(!meId || !P(meId)) return `<div class="panggil muted">💡 Buka profilmu sendiri lalu klik <b>👤 Ini saya</b> — setelah itu setiap orang akan menampilkan panggilanmu kepadanya (Mas, Mbak, Pakde, Bulik, …).</div>`;
+  if(meId===p.id) return '';
+  const rel=relationTo(meId,p.id);
+  if(!rel) return `<div class="panggil muted">Belum ada hubungan tercatat antara kamu dan ${esc(p.namaLengkap)}.</div>`;
+  return `<div class="panggil"><div class="pk">Kamu memanggilnya</div><div class="pv">${esc(callWithAlm(rel,p.id))}</div>
+    <div class="pd">${esc(rel.label)}${rel.desc?' · '+esc(rel.desc):''}</div>
+    <div class="pn">Menurut kebiasaan Jawa pada umumnya; tiap keluarga bisa berbeda.</div></div>`;
+}
 function renderDetail(){
   const d=document.getElementById('detailBody');
-  if(!selectedId || !P(selectedId)){ d.innerHTML='<div class="empty">Pilih seseorang dari pohon atau daftar (☰) untuk melihat & mengelola hubungannya.</div>'; return; }
+  if(!selectedId || !P(selectedId)){ d.innerHTML=`<div class="empty">Pilih seseorang di pohon atau daftar untuk melihat rinciannya.<br><br>
+    <b>Tips</b><br>• Tombol <b>+</b> di bawah kotak membuka cabang keturunan<br>• Klik 2× seseorang (atau <b>🎯 Pusatkan</b>) untuk melihat leluhur &amp; keturunannya<br>• <b>🏠</b> kembali ke tampilan awal</div>`; return; }
   const p=P(selectedId);
   const pa=parentsOf(p.id);
   const pu=parentUnionOf(p.id);
@@ -304,14 +494,20 @@ function renderDetail(){
         </span>`:''}
       </div></div>`;
   }
+  const isHome = homeId()===p.id;
   d.innerHTML=`
     <div class="dhead">
       ${avatarHTML(p,'bigav')}
       <div class="nm">${esc(p.namaLengkap||'(tanpa nama)')}</div>
       ${p.namaPanggilan?`<div class="pg">"${esc(p.namaPanggilan)}"</div>`:''}
-      <div>${p.status==='wafat'?'<span class="badge dead">✝ Telah wafat</span>':'<span class="badge" style="background:#dcfce7;color:#15803d">● Masih hidup</span>'}</div>
-      <button class="btn sm editbtn" id="dEdit">✎ Ubah data</button>
+      <div class="row">${p.status==='wafat'?'<span class="badge dead">✝ Telah wafat</span>':'<span class="badge" style="background:#dcfce7;color:#15803d">● Masih hidup</span>'}
+        ${meId===p.id?'<span class="badge me">👤 Ini kamu</span>':''}${isHome?'<span class="badge">🏠 Tampilan awal</span>':''}</div>
+      <div class="row">
+        <button class="btn sm" id="dEdit">✎ Ubah data</button>
+        ${meId!==p.id?'<button class="btn sm" id="dMe" title="Tandai orang ini sebagai dirimu di perangkat ini">👤 Ini saya</button>':''}
+      </div>
     </div>
+    ${panggilCard(p)}
     ${urutHtml}
     ${p.tahunLahir?field('Tahun lahir',p.tahunLahir):''}
     ${p.telepon?field('Telepon',p.telepon):''}
@@ -327,22 +523,22 @@ function renderDetail(){
       <button class="btn sm" id="aChild">➕ Anak</button>
       <button class="btn sm" id="aParent">➕ Orang tua</button>
       <button class="btn sm" id="aTree">🎯 Pusatkan di sini</button>
-      <button class="btn sm" id="aEdit">✎ Ubah</button>
+      <button class="btn sm" id="aHome" ${isHome?'disabled':''} title="Orang ini yang tampil saat aplikasi dibuka">🏠 Jadikan tampilan awal</button>
       <button class="btn sm danger" id="aDel">🗑 Hapus</button>
     </div>`;
   d.querySelectorAll('.relrow').forEach(el=>el.onclick=()=>select(el.dataset.id));
-  d.querySelectorAll('[data-up]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); moveChild(b.dataset.up,-1); renderDetail(); renderTree(); });
-  d.querySelectorAll('[data-down]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); moveChild(b.dataset.down,1); renderDetail(); renderTree(); });
-  d.querySelectorAll('[data-divorce]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const u=state.unions.find(x=>x.id===b.dataset.divorce); setUnionStatus(b.dataset.divorce, (u&&u.status==='cerai')?'menikah':'cerai'); renderDetail(); renderTree(); });
+  d.querySelectorAll('[data-up]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); moveChild(b.dataset.up,-1); renderDetail(); renderTree(); renderOutline(); });
+  d.querySelectorAll('[data-down]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); moveChild(b.dataset.down,1); renderDetail(); renderTree(); renderOutline(); });
   const selfUp=d.querySelector('#selfUp'), selfDown=d.querySelector('#selfDown');
-  if(selfUp) selfUp.onclick=()=>{ moveChild(p.id,-1); renderDetail(); renderTree(); };
-  if(selfDown) selfDown.onclick=()=>{ moveChild(p.id,1); renderDetail(); renderTree(); };
+  if(selfUp) selfUp.onclick=()=>{ moveChild(p.id,-1); renderDetail(); renderTree(); renderOutline(); };
+  if(selfDown) selfDown.onclick=()=>{ moveChild(p.id,1); renderDetail(); renderTree(); renderOutline(); };
   d.querySelector('#dEdit').onclick=()=>personForm(p);
+  const dMe=d.querySelector('#dMe'); if(dMe) dMe.onclick=()=>{ setMe(p.id); toast('Oke, '+(p.namaPanggilan||p.namaLengkap)+' ditandai sebagai kamu di perangkat ini'); };
   d.querySelector('#aSpouse').onclick=()=>pickOrCreate(id=>{addSpouse(p.id,id);refresh();});
   d.querySelector('#aChild').onclick=()=>pickOrCreate(id=>{addChild(p.id,id);refresh();});
   d.querySelector('#aParent').onclick=()=>pickOrCreate(id=>{addParent(p.id,id);refresh();});
-  d.querySelector('#aTree').onclick=()=>{rootId=p.id;refresh();fit();};
-  d.querySelector('#aEdit').onclick=()=>personForm(p);
+  d.querySelector('#aTree').onclick=()=>{ setFocus(p.id); closeDetailMobile(); };
+  d.querySelector('#aHome').onclick=()=>{ setHome(p.id); renderDetail(); toast((p.namaPanggilan||p.namaLengkap)+' kini jadi tampilan awal'); };
   d.querySelector('#aDel').onclick=()=>confirmDialog('Hapus '+(p.namaLengkap||'orang ini')+'? Hubungannya juga dilepas.',()=>{ deletePerson(p.id); selectedId=null; refresh(); toast('Orang dihapus'); },'Hapus',true);
 }
 function field(k,v){ return `<div class="field"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`; }
@@ -366,7 +562,7 @@ function childrenSection(p){
   });
   return html;
 }
-// daftar pasangan + status menikah/cerai + tombol ubah status
+// daftar pasangan + status (status menikah/cerai diubah lewat "Ubah data")
 function spousesSection(p){
   const us=unionsOf(p.id).filter(u=>u.partners.length===2);
   if(!us.length) return '<div class="hint">Belum ada.</div>';
@@ -375,11 +571,9 @@ function spousesSection(p){
     const cerai=u.status==='cerai';
     return `<div class="relrow" data-id="${spId}">${avatarHTML(s)}
       <div style="flex:1"><div class="nm">${esc(s.namaLengkap)}</div>
-        <div class="sub" style="font-size:11px;color:${cerai?'var(--danger)':'var(--muted)'}">${cerai?'⚯ Sudah cerai':'Menikah'}${s.namaPanggilan?' · '+esc(s.namaPanggilan):''}</div></div>
-      <button class="btn sm" data-divorce="${u.id}" title="Ubah status pernikahan">${cerai?'↺ Menikah':'⚯ Cerai'}</button></div>`;
+        <div class="sub" style="font-size:11px;color:${cerai?'var(--danger)':'var(--muted)'}">${cerai?'⚯ Sudah cerai':'Menikah'}${s.namaPanggilan?' · '+esc(s.namaPanggilan):''}</div></div></div>`;
   }).join('');
 }
-function setUnionStatus(uId,status){ const u=state.unions.find(x=>x.id===uId); if(u){ u.status=status; save(); } }
 function moveChild(childId,dir){
   const u=parentUnionOf(childId); if(!u) return;
   const i=u.children.indexOf(childId), j=i+dir;
@@ -387,16 +581,22 @@ function moveChild(childId,dir){
   [u.children[i],u.children[j]]=[u.children[j],u.children[i]];
   save();
 }
+function setMe(id){ meId=id; lsSet('silsilah-me',id); renderDetail(); renderTree(); renderOutline(); }
 
 /* ============ RENDER: TREE (descendants) ============ */
-const BOX_W=140,BOX_H=58,H_GAP=26,COUPLE_GAP=18,V_GAP=78;
-function buildTree(rootPid, visited){
+const BOX_W=176,BOX_H=60,H_GAP=24,COUPLE_GAP=18,V_GAP=80;
+// buka-tutup cabang: default terbuka sampai kedalaman autoDepth, bisa diubah manual per orang
+let openOverride={}, autoDepth=99, autoRoot=null, lastOpen={};
+function isOpen(pid,depth){ return (pid in openOverride) ? openOverride[pid] : depth<autoDepth; }
+function buildTree(rootPid, visited, depth){
   if(visited.has(rootPid)) return null;
   visited.add(rootPid);
   const us=unionsOf(rootPid);
+  const nKids=us.reduce((s,u)=>s+u.children.length,0);
+  const open=isOpen(rootPid,depth);
   const unions=us.map(u=>{
     const spId=u.partners.find(x=>x!==rootPid)||null;
-    const kids=u.children.map((c,i)=>{ const n=buildTree(c,visited); if(n) n.order=i+1; return n; }).filter(Boolean);
+    const kids=open ? u.children.map((c,i)=>{ const n=buildTree(c,visited,depth+1); if(n) n.order=i+1; return n; }).filter(Boolean) : [];
     let childrenW=0;
     if(kids.length) childrenW=kids.reduce((s,k)=>s+k.subtreeW,0)+H_GAP*(kids.length-1);
     return {spouseId:spId, divorced:u.status==='cerai', kids, childrenW};
@@ -407,7 +607,7 @@ function buildTree(rootPid, visited){
   let childrenTotal=withKids.reduce((s,u)=>s+u.childrenW,0);
   if(withKids.length>1) childrenTotal+=H_GAP*(withKids.length-1);
   const subtreeW=Math.max(coupleW, childrenTotal, BOX_W);
-  return {pid:rootPid, unions, coupleW, subtreeW};
+  return {pid:rootPid, unions, coupleW, subtreeW, nKids, open};
 }
 function placeTree2(node,x,depth,out){
   const y=depth*(BOX_H+V_GAP);
@@ -425,7 +625,7 @@ function placeTree2(node,x,depth,out){
       cursor+=u.childrenW+H_GAP;
     } else u._kidsCenter=null;
   });
-  const py=y+BOX_H/2, childTop=(depth+1)*(BOX_H+V_GAP)-BOX_H/2;
+  const py=y+BOX_H/2, childTop=(depth+1)*(BOX_H+V_GAP)-BOX_H/2, togY=y+BOX_H/2+14;
   let mainX;
   if(unions.length<=1){
     // kasus umum: pasangan tunggal terpusat di atas anak-anaknya (tampilan klasik)
@@ -436,15 +636,14 @@ function placeTree2(node,x,depth,out){
     const coupleLeft=center-coupleW/2;
     mainX=coupleLeft+BOX_W/2; node._cx=mainX;
     out.nodes.push({pid:node.pid,x:mainX,y,blood:true,order:node.order});
+    const spX=coupleLeft+BOX_W+COUPLE_GAP+BOX_W/2;
     if(spouse){
-      const spX=coupleLeft+BOX_W+COUPLE_GAP+BOX_W/2;
       out.nodes.push({pid:spouse,x:spX,y,blood:false});
       out.marriages.push({x1:mainX,x2:spX,y,divorced:u.divorced});
     }
-    if(u&&u.kids.length){
-      const parentX=spouse?(mainX+(coupleLeft+BOX_W+COUPLE_GAP+BOX_W/2))/2:mainX;
-      u.kids.forEach(k=>out.links.push({x1:parentX,y1:py,x2:k._cx,y2:childTop}));
-    }
+    const parentX=spouse?(mainX+spX)/2:mainX;
+    if(u&&u.kids.length) u.kids.forEach(k=>out.links.push({x1:parentX,y1:py,x2:k._cx,y2:childTop}));
+    if(node.nKids) out.toggles.push({pid:node.pid,x:parentX,y:togY,open:node.open,n:node.nKids});
   } else {
     // banyak pernikahan (mis. cerai lalu menikah lagi): orang ini di kiri, tiap pasangan di atas anaknya
     mainX=x+BOX_W/2; node._cx=mainX;
@@ -463,6 +662,7 @@ function placeTree2(node,x,depth,out){
         u.kids.forEach(k=>out.links.push({x1:originX,y1:py,x2:k._cx,y2:childTop}));
       }
     });
+    if(node.nKids) out.toggles.push({pid:node.pid,x:mainX,y:togY,open:node.open,n:node.nKids});
   }
 }
 // --- tata letak LELUHUR (ke atas dari fokus) ---
@@ -495,24 +695,39 @@ function placeAnc(node,x,depth,out){
 }
 function pickDefaultRoot(){
   if(rootId && P(rootId)) return rootId;
+  if(homeId()) return homeId();
   // orang tertua yg punya anak & tanpa orang tua tercatat
   const cand=state.people.filter(p=>parentsOf(p.id).length===0 && childrenOf(p.id).length>0);
   return (cand[0]||state.people[0])?.id||null;
 }
+function minK(){ return (isMobile()?0.78:0.72) * (document.body.classList.contains('big')?1.15:1); }
+// pilih kedalaman cabang yang terbuka otomatis supaya pohon masih terbaca di layar ini
+function chooseAutoDepth(){
+  const W=(svg.getBoundingClientRect().width||1000)-40;
+  openOverride={};
+  for(let d=6; d>=1; d--){ autoDepth=d; const t=buildTree(rootId,new Set(),0); if(t.subtreeW*minK()<=W) return; }
+  autoDepth=1;
+}
 function setFocus(id){ if(!P(id))return; rootId=id; selectedId=id; refresh(); fit(); }
+function goHome(){ const h=homeId()||pickDefaultRoot(); if(h){ rootId=null; autoRoot=null; rootId=h; selectedId=null; refresh(); fit(); } }
 function renderTree(){
   const vp=document.getElementById('viewport');
   const empty=document.getElementById('treeEmpty');
   rootId=pickDefaultRoot();
-  if(!rootId){ vp.innerHTML=''; empty.style.display='flex'; return; }
+  if(!rootId){ vp.innerHTML=''; document.getElementById('genlayer').innerHTML=''; genRows=[]; empty.style.display='flex'; return; }
   empty.style.display='none';
-  const tree=buildTree(rootId,new Set());
-  const out={nodes:[],links:[],marriages:[],ancLinks:[]};
+  if(autoRoot!==rootId){ autoRoot=rootId; chooseAutoDepth(); }
+  const tree=buildTree(rootId,new Set(),0);
+  const out={nodes:[],links:[],marriages:[],ancLinks:[],toggles:[]};
   placeTree2(tree,0,0,out);
   // leluhur ke atas, dipusatkan di kotak fokus
   const anc=measureAnc(rootId,new Set());
   placeAnc(anc, tree._cx-anc.w/2, 0, out);
   let html='';
+  // label generasi di sisi kiri (Generasi 1 = baris paling atas yang tampil)
+  const ys=[...new Set(out.nodes.map(n=>n.y))].sort((a,b)=>a-b);
+  genRows=ys;
+  document.getElementById('genlayer').innerHTML=ys.map((y,i)=>`<g class="gen" transform="translate(8,-100)"><rect width="84" height="20" rx="10"/><text x="42" y="14" text-anchor="middle">GENERASI ${i+1}</text></g>`).join('');
   out.links.concat(out.ancLinks).forEach(l=>{
     const mid=(l.y1+l.y2)/2;
     html+=`<path class="link" d="M${l.x1},${l.y1} C${l.x1},${mid} ${l.x2},${mid} ${l.x2},${l.y2}"/>`;
@@ -526,17 +741,28 @@ function renderTree(){
     const dead=p.status==='wafat';
     const init=(p.namaPanggilan||p.namaLengkap||'?').trim()[0]?.toUpperCase()||'?';
     const x=n.x-BOX_W/2, y=n.y-BOX_H/2;
-    const sub=(p.tahunLahir?p.tahunLahir+' · ':'')+(p.domisili||'');
+    const nl=p.namaLengkap||p.namaPanggilan||'(tanpa nama)';
+    const np=p.namaPanggilan && p.namaPanggilan.toLowerCase()!==nl.toLowerCase() ? '“'+p.namaPanggilan+'”' : '';
+    const sub=[np, p.tahunLahir].filter(Boolean).join(' · ') || p.domisili || '';
     const canDrag = n.blood && n.pid!==rootId && (parentUnionOf(n.pid)?.children.length>1);
     const isFocus = n.pid===rootId && n.blood;
-    html+=`<g class="node ${n.pid===selectedId?'sel':''} ${isFocus?'focus':''} ${canDrag?'draggable':''}" data-id="${n.pid}" transform="translate(${x},${y})">
+    html+=`<g class="node ${n.pid===selectedId?'sel':''} ${isFocus?'focus':''} ${canDrag?'draggable':''} ${n.pid===meId?'me':''}" data-id="${n.pid}" transform="translate(${x},${y})">
+      <title>${esc(nl)}${p.namaPanggilan?' ('+esc(p.namaPanggilan)+')':''}</title>
       <rect width="${BOX_W}" height="${BOX_H}" rx="10" ${dead?'style="stroke-dasharray:4 3"':''}/>
       <circle cx="22" cy="${BOX_H/2}" r="15" fill="${g}" ${dead?'opacity="0.55"':''}/>
       <text x="22" y="${BOX_H/2+5}" text-anchor="middle" fill="#fff" font-weight="700" font-size="14">${esc(init)}</text>
-      <text class="nm" x="44" y="${BOX_H/2-3}">${esc(trim(p.namaPanggilan||p.namaLengkap,13))}</text>
-      <text class="sub" x="44" y="${BOX_H/2+13}">${dead?'✝ ':''}${esc(trim(sub,16))}</text>
+      <text class="nm" x="44" y="${BOX_H/2-3}">${esc(trim(nl,19))}</text>
+      <text class="sub" x="44" y="${BOX_H/2+13}">${dead?'✝ ':''}${esc(trim(sub,dead?20:22))}</text>
       ${n.order?`<circle cx="6" cy="6" r="9" fill="var(--accent)" stroke="#fff" stroke-width="1.5"/><text x="6" y="9.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">${n.order}</text>`:''}
     </g>`;
+  });
+  lastOpen={};
+  out.toggles.forEach(t=>{
+    lastOpen[t.pid]=t.open;
+    const label=t.open?'−':'+'+t.n, w=t.open?24:Math.max(30,12+String(label).length*7);
+    html+=`<g class="tog ${t.open?'':'closed'}" data-tog="${t.pid}" transform="translate(${t.x},${t.y})">
+      <title>${t.open?'Tutup cabang':'Buka '+t.n+' anak'}</title>
+      <rect x="${-w/2}" y="-10" width="${w}" height="20" rx="10"/><text y="4" text-anchor="middle">${label}</text></g>`;
   });
   vp.innerHTML=html;
   vp.querySelectorAll('.node').forEach(el=>{
@@ -545,13 +771,67 @@ function renderTree(){
   });
   applyView();
 }
+// buka/tutup cabang tanpa membuat layar "melompat": orang yg diklik tetap di posisi yg sama
+function toggleBranch(pid){
+  const before=nodePos[pid];
+  openOverride[pid]=!lastOpen[pid];
+  renderTree();
+  const after=nodePos[pid];
+  if(before&&after){ view.x+=(before.x-after.x)*view.k; view.y+=(before.y-after.y)*view.k; applyView(); }
+}
+
+/* ============ RENDER: DAFTAR (outline) ============ */
+let listClosed={};
+function renderOutline(){
+  const el=document.getElementById('listView');
+  const isList=viewMode==='list';
+  el.hidden=!isList;
+  document.getElementById('zoomBtns').style.display=isList?'none':'';
+  document.querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('on',b.dataset.view===viewMode));
+  if(!isList) return;
+  const root=pickDefaultRoot();
+  if(!root){ el.innerHTML='<div class="olup">Belum ada data.</div>'; return; }
+  const pa=parentsOf(root);
+  let html=pa.length?`<div class="olup">⬆ Orang tua: ${pa.map(id=>`<a data-focus="${id}">${esc(fullName(id))}</a>`).join(' &amp; ')}</div>`:'';
+  html+=outlineNode(root,0,new Set());
+  el.innerHTML=html;
+  el.querySelectorAll('[data-focus]').forEach(a=>a.onclick=()=>setFocus(a.dataset.focus));
+  el.querySelectorAll('[data-sel]').forEach(a=>a.onclick=e=>{ e.stopPropagation(); select(a.dataset.sel); });
+  el.querySelectorAll('.olrow').forEach(r=>{ r.onclick=()=>select(r.dataset.id); r.ondblclick=()=>setFocus(r.dataset.id); });
+  el.querySelectorAll('.tg[data-tg]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); listClosed[b.dataset.tg]=!listClosed[b.dataset.tg]; renderOutline(); });
+}
+function outlineNode(pid,depth,seen){
+  if(seen.has(pid)) return ''; seen.add(pid);
+  const p=P(pid); if(!p) return '';
+  const us=unionsOf(pid), kids=us.flatMap(u=>u.children.map((c,i)=>({c,i})));
+  const closed=!!listClosed[pid];
+  const pu=parentUnionOf(pid), ord=depth>0&&pu?pu.children.indexOf(pid)+1:0;
+  const spouses=us.filter(u=>u.partners.length===2).map(u=>{ const s=u.partners.find(x=>x!==pid);
+    return `<a data-sel="${s}">${esc(fullName(s))}</a>${u.status==='cerai'?' (cerai)':''}`; });
+  const rel=meId&&meId!==pid?relationTo(meId,pid):null;
+  const sub=[p.namaPanggilan&&p.namaPanggilan!==p.namaLengkap?'“'+p.namaPanggilan+'”':'', p.tahunLahir, p.domisili].filter(Boolean).join(' · ');
+  let html=`<div class="olrow ${pid===selectedId?'sel':''}" data-id="${pid}">
+    <button class="tg ${kids.length?'':'blank'}" ${kids.length?`data-tg="${pid}"`:''} title="${closed?'Buka':'Tutup'}">${closed?'▸':'▾'}</button>
+    ${ord?`<span class="ord">${ord}</span>`:''}${avatarHTML(p)}
+    <div class="oltx"><div class="nm">${esc(p.namaLengkap||'(tanpa nama)')}${p.status==='wafat'?' <span style="color:var(--muted);font-weight:400">✝</span>':''}</div>
+      ${sub?`<div class="sub">${esc(sub)}</div>`:''}
+      ${spouses.length?`<div class="sp">⚭ ${spouses.join(', ')}</div>`:''}</div>
+    ${pid===meId?'<span class="chip">👤 Kamu</span>':rel?`<span class="chip" title="${esc(rel.label)}">${esc(rel.call)}</span>`:''}
+  </div>`;
+  if(kids.length && !closed){
+    html+=`<div class="olkids">${kids.map(k=>outlineNode(k.c,depth+1,seen)).join('')}</div>`;
+  }
+  return html;
+}
+function setViewMode(m){ viewMode=m; lsSet('silsilah-view',m); renderOutline(); if(m==='tree'){ renderTree(); fit(); } }
 
 /* ---------- root select ---------- */
 // "Pusatkan di" = kotak pencarian (bukan dropdown panjang)
 function renderRootSelect(){
   const inp=document.getElementById('focusSearch');
+  if(inp && document.activeElement!==inp) inp.value='';
   const cur=P(rootId);
-  if(inp && document.activeElement!==inp) inp.value = cur ? (cur.namaLengkap||'(tanpa nama)') : '';
+  if(inp) inp.placeholder = cur ? '🔍 '+(cur.namaLengkap||'(tanpa nama)') : '🔍 Cari & pusatkan nama…';
 }
 function drawFocusList(){
   const inp=document.getElementById('focusSearch'), list=document.getElementById('focusList');
@@ -561,7 +841,7 @@ function drawFocusList(){
     .sort((a,b)=>(a.namaLengkap||'').localeCompare(b.namaLengkap||'')).slice(0,60);
   list.innerHTML = items.map(p=>`<div class="fitem" data-id="${p.id}">${avatarHTML(p)}<span>${esc(p.namaLengkap||'(tanpa nama)')}${p.namaPanggilan?' · '+esc(p.namaPanggilan):''}</span></div>`).join('') || '<div class="fitem">Tidak ada nama cocok</div>';
   list.classList.add('show');
-  list.querySelectorAll('.fitem[data-id]').forEach(el=>el.onmousedown=e=>{ e.preventDefault(); setFocus(el.dataset.id); document.getElementById('focusList').classList.remove('show'); el.dataset.id; });
+  list.querySelectorAll('.fitem[data-id]').forEach(el=>el.onmousedown=e=>{ e.preventDefault(); setFocus(el.dataset.id); list.classList.remove('show'); inp.blur(); });
 }
 function setupFocusSearch(){
   const inp=document.getElementById('focusSearch'), list=document.getElementById('focusList');
@@ -570,14 +850,54 @@ function setupFocusSearch(){
   inp.addEventListener('blur',()=>setTimeout(()=>{ list.classList.remove('show'); renderRootSelect(); },150));
 }
 
-/* ============ PAN / ZOOM ============ */
+/* ============ PAN / ZOOM (mouse, sentuh & cubit) ============ */
 const svg=document.getElementById('svg');
-function applyView(){ document.getElementById('viewport').setAttribute('transform',`translate(${view.x},${view.y}) scale(${view.k})`); }
-let drag=null;
-svg.addEventListener('mousedown',e=>{ if(e.target.closest('.node'))return; drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y}; svg.classList.add('grabbing'); });
-window.addEventListener('mousemove',e=>{ if(!drag)return; view.x=drag.vx+(e.clientX-drag.x); view.y=drag.vy+(e.clientY-drag.y); applyView(); });
-window.addEventListener('mouseup',()=>{ drag=null; svg.classList.remove('grabbing'); });
-// --- drag kotak anak di canvas untuk mengurutkan ulang ---
+let genRows=[];
+function applyView(){
+  document.getElementById('viewport').setAttribute('transform',`translate(${view.x},${view.y}) scale(${view.k})`);
+  // label generasi: x tetap di tepi kiri, y mengikuti baris pohon
+  document.querySelectorAll('#genlayer .gen').forEach((g,i)=>{ const y=view.y+(genRows[i]-BOX_H/2)*view.k-24; g.setAttribute('transform',`translate(8,${y})`); });
+}
+let drag=null, pinch=null, tap=null, lastTap=null; const ptrs=new Map();
+svg.addEventListener('pointerdown',e=>{
+  // catat calon "ketukan" (tombol cabang, atau kotak orang di layar sentuh)
+  tap={pid:e.pointerId,x:e.clientX,y:e.clientY,tog:e.target.closest('.tog'),node:e.target.closest('.node')};
+  if(tap.tog) return;
+  if(e.target.closest('.node') && e.pointerType==='mouse') return;   // mouse di kotak = pilih / geser urutan
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(e.pointerType==='mouse'){ try{ svg.setPointerCapture(e.pointerId); }catch(_){} }
+  if(ptrs.size===1){ drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y}; svg.classList.add('grabbing'); }
+  else if(ptrs.size===2){
+    drag=null; const [a,b]=[...ptrs.values()], r=svg.getBoundingClientRect();
+    pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,k:view.k,vx:view.x,vy:view.y,cx:(a.x+b.x)/2-r.left,cy:(a.y+b.y)/2-r.top};
+  }
+});
+svg.addEventListener('pointermove',e=>{
+  if(!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch && ptrs.size>=2){
+    const [a,b]=[...ptrs.values()], f=Math.hypot(a.x-b.x,a.y-b.y)/pinch.d;
+    view.k=pinch.k*f; view.x=pinch.cx-(pinch.cx-pinch.vx)*f; view.y=pinch.cy-(pinch.cy-pinch.vy)*f; applyView();
+  } else if(drag){ view.x=drag.vx+(e.clientX-drag.x); view.y=drag.vy+(e.clientY-drag.y); applyView(); }
+});
+function ptrEnd(e){
+  ptrs.delete(e.pointerId);
+  if(ptrs.size<2) pinch=null;
+  if(ptrs.size===0){ drag=null; svg.classList.remove('grabbing'); }
+  else if(ptrs.size===1){ const p=[...ptrs.values()][0]; drag={x:p.x,y:p.y,vx:view.x,vy:view.y}; }
+}
+svg.addEventListener('pointercancel',e=>{ tap=null; ptrEnd(e); });
+svg.addEventListener('pointerup',e=>{
+  const t=tap; tap=null; ptrEnd(e);
+  if(!t || t.pid!==e.pointerId || Math.hypot(e.clientX-t.x,e.clientY-t.y)>8) return;
+  if(t.tog){ toggleBranch(t.tog.dataset.tog); return; }
+  if(t.node && e.pointerType!=='mouse'){          // sentuh: ketuk = pilih, ketuk 2× = pusatkan
+    const id=t.node.dataset.id, now=Date.now();
+    if(lastTap && lastTap.id===id && now-lastTap.t<400){ lastTap=null; setFocus(id); }
+    else { lastTap={id,t:now}; select(id); }
+  }
+});
+// --- drag kotak anak di canvas untuk mengurutkan ulang (mouse) ---
 function startNodeDrag(e,pid){
   if(e.button!==0) return;
   e.stopPropagation();                 // jangan picu geser canvas
@@ -585,7 +905,10 @@ function startNodeDrag(e,pid){
 }
 window.addEventListener('mousemove',e=>{
   if(!nodeDrag) return;
-  if(!nodeDrag.moved && Math.hypot(e.clientX-nodeDrag.x0,e.clientY-nodeDrag.y0)>5){ nodeDrag.moved=true; document.body.style.userSelect='none'; }
+  if(!nodeDrag.moved && Math.hypot(e.clientX-nodeDrag.x0,e.clientY-nodeDrag.y0)>5){
+    if(!document.querySelector(`.node.draggable[data-id="${nodeDrag.pid}"]`)) return;
+    nodeDrag.moved=true; document.body.style.userSelect='none';
+  }
   if(nodeDrag.moved){
     const g=document.querySelector(`.node[data-id="${nodeDrag.pid}"]`), base=nodePos[nodeDrag.pid];
     if(g&&base){ const dx=(e.clientX-nodeDrag.x0)/view.k; g.setAttribute('transform',`translate(${base.x-BOX_W/2+dx},${base.y-BOX_H/2})`); g.style.opacity='0.75'; }
@@ -609,14 +932,25 @@ window.addEventListener('mouseup',e=>{
 svg.addEventListener('wheel',e=>{ e.preventDefault(); const f=e.deltaY<0?1.1:0.9; const r=svg.getBoundingClientRect();
   const mx=e.clientX-r.left,my=e.clientY-r.top;
   view.x=mx-(mx-view.x)*f; view.y=my-(my-view.y)*f; view.k*=f; applyView(); },{passive:false});
-document.getElementById('zoomIn').onclick=()=>{view.k*=1.2;applyView();};
-document.getElementById('zoomOut').onclick=()=>{view.k/=1.2;applyView();};
+function zoomBy(f){ const r=svg.getBoundingClientRect(), cx=r.width/2, cy=r.height/2; view.x=cx-(cx-view.x)*f; view.y=cy-(cy-view.y)*f; view.k*=f; applyView(); }
+document.getElementById('zoomIn').onclick=()=>zoomBy(1.2);
+document.getElementById('zoomOut').onclick=()=>zoomBy(1/1.2);
 document.getElementById('zoomFit').onclick=fit;
+// pas ke layar, tapi tidak lebih kecil dari batas terbaca; pohon diletakkan di tengah
 function fit(){
   const vp=document.getElementById('viewport'); const b=vp.getBBox(); if(!b.width)return;
   const r=svg.getBoundingClientRect();
-  const k=Math.min(r.width/(b.width+80),r.height/(b.height+80),1.4);
-  view.k=k; view.x=(r.width-b.width*k)/2-b.x*k; view.y=30-b.y*k; applyView();
+  const top=Math.max(0,document.getElementById('treebar').getBoundingClientRect().bottom-r.top)+12;
+  const availW=r.width-24, availH=r.height-top-16;
+  let k=Math.min(availW/(b.width+40), availH/(b.height+40), 1.25);
+  k=Math.max(k,minK());
+  view.k=k;
+  const f=nodePos[rootId];
+  if(b.width*k<=availW) view.x=(r.width-b.width*k)/2-b.x*k;
+  else view.x=r.width/2-(f?f.x:b.x+b.width/2)*k;
+  if(b.height*k<=availH) view.y=top+Math.min((availH-b.height*k)/2,40)-b.y*k;
+  else view.y=top+availH*0.3-(f?f.y:b.y)*k;
+  applyView();
 }
 
 /* ============ MODALS ============ */
@@ -644,6 +978,11 @@ function confirmDialog(message,onYes,yesLabel='Ya',danger=false){
 }
 function personForm(existing){
   const p=existing||{jk:'L',status:'hidup'};
+  // status pernikahan (menikah/cerai) diubah di sini, bukan lewat tombol di rincian
+  const marriages=existing?unionsOf(p.id).filter(u=>u.partners.length===2):[];
+  const mHtml=marriages.map(u=>{ const s=u.partners.find(x=>x!==p.id); const cerai=u.status==='cerai';
+    return `<div class="frow"><label>Status pernikahan dengan ${esc(fullName(s))}</label>
+      <div class="seg" data-union="${u.id}"><button data-v="menikah" class="${cerai?'':'on'}">Menikah</button><button data-v="cerai" class="${cerai?'on':''}">Sudah cerai</button></div></div>`; }).join('');
   const o=modal(`
     <h3>${existing?'Ubah data':'Tambah orang'}</h3>
     <div class="mbody">
@@ -662,11 +1001,13 @@ function personForm(existing){
           <button data-v="hidup" class="${p.status!=='wafat'?'on':''}">Masih hidup</button>
           <button data-v="wafat" class="${p.status==='wafat'?'on':''}">Telah wafat</button>
         </div></div>
+      ${mHtml}
     </div>
     <div class="mfoot"><button class="btn" id="f_cancel">Batal</button><button class="btn primary" id="f_save">Simpan</button></div>`);
   let jk=p.jk||'L', st=p.status||'hidup';
   o.querySelectorAll('#f_jk button').forEach(b=>b.onclick=()=>{jk=b.dataset.v;o.querySelectorAll('#f_jk button').forEach(x=>x.classList.toggle('on',x===b));});
   o.querySelectorAll('#f_st button').forEach(b=>b.onclick=()=>{st=b.dataset.v;o.querySelectorAll('#f_st button').forEach(x=>x.classList.toggle('on',x===b));});
+  o.querySelectorAll('.seg[data-union] button').forEach(b=>b.onclick=()=>{ b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); });
   o.querySelector('#f_cancel').onclick=()=>o.remove();
   o.querySelector('#f_nl').oninput=e=>e.target.style.borderColor='';
   o.querySelector('#f_save').onclick=()=>{
@@ -675,25 +1016,28 @@ function personForm(existing){
     const data={namaLengkap:nl,namaPanggilan:o.querySelector('#f_np').value.trim(),
       telepon:o.querySelector('#f_tel').value.trim(),domisili:o.querySelector('#f_dom').value.trim(),
       tahunLahir:o.querySelector('#f_thn').value.trim(),jk,status:st};
+    o.querySelectorAll('.seg[data-union]').forEach(sg=>{ const u=state.unions.find(x=>x.id===sg.dataset.union); const v=sg.querySelector('button.on')?.dataset.v;
+      if(u){ if(v==='cerai') u.status='cerai'; else delete u.status; } });
     if(existing){ Object.assign(existing,data); save(); } else { selectedId=addPerson(data); }
     o.remove(); refresh();
   };
   setTimeout(()=>o.querySelector('#f_nl').focus(),50);
 }
 // pilih orang yg sudah ada ATAU buat baru, lalu callback(id)
-function pickOrCreate(cb){
+function pickOrCreate(cb,opts={}){
   const o=modal(`
-    <h3>Hubungkan orang</h3>
+    <h3>${esc(opts.title||'Hubungkan orang')}</h3>
     <div class="mbody">
-      <div class="hint">Pilih orang yang sudah ada, atau buat orang baru.</div>
+      <div class="hint">${esc(opts.hint||'Pilih orang yang sudah ada, atau buat orang baru.')}</div>
       <input class="search" id="pk_search" placeholder="Cari nama..." style="margin-bottom:10px">
-      <button class="btn primary" id="pk_new" style="width:100%;justify-content:center;margin-bottom:10px">➕ Buat orang baru</button>
+      ${opts.noCreate?'':'<button class="btn primary" id="pk_new" style="width:100%;justify-content:center;margin-bottom:10px">➕ Buat orang baru</button>'}
       <div id="pk_list" style="max-height:300px;overflow:auto"></div>
     </div>
     <div class="mfoot"><button class="btn" id="pk_cancel">Batal</button></div>`);
   function draw(){
     const q=(o.querySelector('#pk_search').value||'').toLowerCase();
-    const items=state.people.filter(p=>p.id!==selectedId && (!q||(p.namaLengkap+' '+(p.namaPanggilan||'')).toLowerCase().includes(q)));
+    const items=state.people.filter(p=>(opts.noCreate||p.id!==selectedId) && (!q||(p.namaLengkap+' '+(p.namaPanggilan||'')).toLowerCase().includes(q)))
+      .sort((a,b)=>(a.namaLengkap||'').localeCompare(b.namaLengkap||''));
     o.querySelector('#pk_list').innerHTML=items.map(p=>`<div class="pickitem" data-id="${p.id}">${avatarHTML(p)}
       <div><div class="nm" style="font-size:13px;font-weight:600">${esc(p.namaLengkap)}</div>
       <div class="sub" style="font-size:11px;color:var(--muted)">${esc(p.namaPanggilan||'')}${p.domisili?' · '+esc(p.domisili):''}</div></div></div>`).join('')||'<div class="hint">Tidak ada hasil.</div>';
@@ -701,9 +1045,10 @@ function pickOrCreate(cb){
   }
   o.querySelector('#pk_search').oninput=draw;
   o.querySelector('#pk_cancel').onclick=()=>o.remove();
-  o.querySelector('#pk_new').onclick=()=>{ o.remove();
+  const pkNew=o.querySelector('#pk_new');
+  if(pkNew) pkNew.onclick=()=>{ o.remove();
     // buat orang baru lewat form, lalu hubungkan
-    const o2=personFormReturning(id=>cb(id));
+    personFormReturning(id=>cb(id));
   };
   draw();
   setTimeout(()=>o.querySelector('#pk_search').focus(),50);
@@ -744,25 +1089,39 @@ function personFormReturning(cb){
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function trim(s,n){ s=s||''; return s.length>n?s.slice(0,n-1)+'…':s; }
 function select(id){
-  selectedId=id; renderList(); renderDetail(); renderTree();
+  selectedId=id; renderList(); renderDetail(); renderTree(); renderOutline();
   if(isMobile()) document.getElementById('detail').classList.add('open');  // buka panel detail di HP
   document.getElementById('sidebar').classList.remove('open');             // tutup daftar setelah memilih
   updateBackdrop();
 }
-function refresh(){ renderList(); renderDetail(); renderRootSelect(); renderTree(); }
+function refresh(){ renderList(); renderDetail(); renderRootSelect(); renderTree(); renderOutline(); }
 
-/* ============ TOOLBAR & DRAWER ============ */
+/* ============ TOOLBAR, MENU & DRAWER ============ */
 function isMobile(){ return window.matchMedia('(max-width:760px)').matches; }
 function updateBackdrop(){
   const sb=document.getElementById('sidebar'), dt=document.getElementById('detail');
   const any=sb.classList.contains('open')||(isMobile()&&dt.classList.contains('open'));
   document.getElementById('backdrop').classList.toggle('show',any);
 }
+function closeDetailMobile(){ document.getElementById('detail').classList.remove('open'); updateBackdrop(); }
 document.getElementById('btnMenu').onclick=()=>{ const sb=document.getElementById('sidebar'); sb.classList.toggle('open'); updateBackdrop(); };
 document.getElementById('backdrop').onclick=()=>{ document.getElementById('sidebar').classList.remove('open'); document.getElementById('detail').classList.remove('open'); updateBackdrop(); };
-document.getElementById('detailClose').onclick=()=>{ document.getElementById('detail').classList.remove('open'); updateBackdrop(); };
+document.getElementById('detailClose').onclick=closeDetailMobile;
 document.getElementById('btnAdd').onclick=()=>personForm(null);
 document.getElementById('searchBox').oninput=renderList;
+// menu ⋯ (aksi yang jarang dipakai / berisiko dipindah ke sini)
+const moreMenu=document.getElementById('moreMenu');
+document.getElementById('btnMore').onclick=e=>{ e.stopPropagation(); moreMenu.classList.toggle('show'); };
+document.addEventListener('click',e=>{ if(!e.target.closest('.menuwrap')) moreMenu.classList.remove('show'); });
+moreMenu.addEventListener('click',e=>{ if(e.target.closest('button')) moreMenu.classList.remove('show'); });
+document.getElementById('btnHome').onclick=goHome;
+document.getElementById('btnHomeMenu').onclick=goHome;
+document.getElementById('viewSeg').addEventListener('click',e=>{ const b=e.target.closest('button[data-view]'); if(b) setViewMode(b.dataset.view); });
+document.getElementById('btnMe').onclick=()=>pickOrCreate(id=>{ setMe(id); toast('Oke, '+(P(id).namaPanggilan||P(id).namaLengkap)+' ditandai sebagai kamu di perangkat ini'); },
+  {title:'Siapa kamu?',hint:'Pilih namamu sendiri. Ini hanya disimpan di perangkat ini, untuk menampilkan panggilanmu ke setiap orang.',noCreate:true});
+function applyFont(){ const big=lsGet('silsilah-big')==='1'; document.body.classList.toggle('big',big);
+  document.getElementById('btnFont').textContent=big?'🔠 Huruf normal':'🔠 Huruf besar'; }
+document.getElementById('btnFont').onclick=()=>{ lsSet('silsilah-big',lsGet('silsilah-big')==='1'?'0':'1'); applyFont(); autoRoot=null; renderTree(); fit(); };
 document.getElementById('btnExport').onclick=()=>{
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
@@ -777,35 +1136,14 @@ document.getElementById('importFile').onchange=e=>{
     let d; try{ d=JSON.parse(rd.result); }catch(err){ toast('File bukan JSON yang valid','error'); return; }
     if(!d || !Array.isArray(d.people) || !Array.isArray(d.unions)){ toast('Format file tidak dikenali','error'); return; }
     confirmDialog('Ganti SEMUA data dengan isi file "'+f.name+'" ('+d.people.length+' orang)? Data sekarang akan tertimpa.',()=>{
-      state=d; repairUnions(); selectedId=null; rootId=null; save(); refresh(); fit(); toast('Data berhasil diimpor');
+      state=d; repairUnions(); selectedId=null; rootId=null; autoRoot=null; save(); refresh(); fit(); toast('Data berhasil diimpor');
     },'Impor',true);
   };
   rd.readAsText(f);
 };
 document.getElementById('btnReset').onclick=()=>confirmDialog('Kosongkan SEMUA data? Tindakan ini tidak bisa dibatalkan.',()=>{ state={people:[],unions:[]}; selectedId=null; rootId=null; save(); refresh(); toast('Data dikosongkan'); },'Kosongkan',true);
 setupFocusSearch();
-
-/* ============ SAMPLE DATA ============ */
-function loadSample(){
-  state={people:[],unions:[]};
-  const m=(nl,np,jk,dom,status='hidup',tahunLahir='')=>addPerson({namaLengkap:nl,namaPanggilan:np,jk,domisili:dom,status,telepon:'',tahunLahir});
-  const kakek=m('Soeharto Wijaya','Pak To','L','Yogyakarta','wafat');
-  const nenek=m('Siti Aminah','Bu Sit','P','Yogyakarta','wafat');
-  const ayah=m('Budi Wijaya','Budi','L','Jakarta','hidup','1968');
-  const ibu=m('Dewi Lestari','Dewi','P','Jakarta','hidup','1972');
-  const paman=m('Agus Wijaya','Agus','L','Surabaya','hidup','1970');
-  const anak1=m('Putra Wijaya','Putra','L','Bandung','hidup','1992');
-  const menantu=m('Rina Sari','Rina','P','Bandung','hidup','1994');
-  const anak2=m('Sari Wijaya','Sari','P','Jakarta','hidup','1996');
-  const cucu=m('Bima Wijaya','Bima','L','Bandung','hidup','2018');
-  addSpouse(kakek,nenek);
-  addChild(kakek,ayah); addChild(kakek,paman);
-  addSpouse(ayah,ibu);
-  addChild(ayah,anak1); addChild(ayah,anak2);
-  addSpouse(anak1,menantu);
-  addChild(anak1,cucu);
-  rootId=kakek; selectedId=null; save(); refresh(); fit();
-}
+applyFont();
 
 /* ============ GOOGLE DRIVE SYNC ============ */
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
@@ -873,7 +1211,7 @@ async function connectDrive(interactive){
       driveFileId=await driveCreate(state); localStorage.setItem('drive_file_id',driveFileId);
     }
     driveConnected=true; localStorage.setItem('silsilah-data',JSON.stringify(state));
-    setStatus('saved'); updateDriveBtn(); refresh(); fit();
+    rootId=null; autoRoot=null; setStatus('saved'); updateDriveBtn(); refresh(); fit();
     if(interactive) toast('Tersambung ke Google Drive');
   }catch(e){ console.error(e); if(interactive) toast('Gagal menyambung. Periksa Client ID & origin. ('+(e.message||'')+')','error'); }
 }
@@ -888,7 +1226,8 @@ function chooseConflict(){
 function setStatus(s){
   const el=document.getElementById('driveStatus'); if(!el) return;
   const map={off:['off','● Lokal saja'],saving:['saving','⟳ Menyimpan…'],saved:['saved','✓ Tersimpan di Drive'],error:['error','⚠ Gagal menyimpan']};
-  const v=map[s]||map.off; el.className='drivestatus '+v[0]; el.textContent=v[1];
+  const v=map[s]||map.off; el.className='drivestatus '+v[0];
+  el.innerHTML='<b>'+v[1].slice(0,1)+'</b><span class="stx">'+v[1].slice(2)+'</span>';
 }
 function updateDriveBtn(){ const b=document.getElementById('btnDrive'); if(b) b.textContent=driveConnected?'☁ Drive aktif':'☁ Hubungkan Drive'; }
 function driveModal(){
@@ -912,6 +1251,7 @@ function driveModal(){
 function bootDrive(){
   setStatus('off'); updateDriveBtn();
   document.getElementById('btnDrive').onclick=driveModal;
+  document.getElementById('driveStatus').onclick=driveModal;
   // auto-sambung hanya bila pernah tersambung sebelumnya (punya file id) -> hindari popup saat pertama buka
   if(CLIENT_ID && driveFileId){ let tries=0; const t=()=>{ if(initToken()){ connectDrive(false); } else if(tries++<25){ setTimeout(t,400); } }; t(); }
 }
